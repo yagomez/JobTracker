@@ -3,13 +3,13 @@ import { query } from '@/lib/db/client';
 import { Job, UpdateJobInput } from '@/lib/types';
 
 // GET single job
-export async function GET(
+export function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const result = await query(
-      'SELECT * FROM jobs WHERE id = $1',
+    const result = query(
+      'SELECT * FROM jobs WHERE id = ?',
       [params.id]
     );
 
@@ -40,30 +40,29 @@ export async function PUT(
 
     const updates: string[] = [];
     const values: any[] = [];
-    let paramIndex = 1;
 
     if (body.company !== undefined) {
-      updates.push(`company = $${paramIndex++}`);
+      updates.push(`company = ?`);
       values.push(body.company);
     }
     if (body.position !== undefined) {
-      updates.push(`position = $${paramIndex++}`);
+      updates.push(`position = ?`);
       values.push(body.position);
     }
     if (body.url !== undefined) {
-      updates.push(`url = $${paramIndex++}`);
+      updates.push(`url = ?`);
       values.push(body.url);
     }
     if (body.date_applied !== undefined) {
-      updates.push(`date_applied = $${paramIndex++}`);
+      updates.push(`date_applied = ?`);
       values.push(body.date_applied);
     }
     if (body.status !== undefined) {
-      updates.push(`status = $${paramIndex++}`);
+      updates.push(`status = ?`);
       values.push(body.status);
     }
     if (body.notes !== undefined) {
-      updates.push(`notes = $${paramIndex++}`);
+      updates.push(`notes = ?`);
       values.push(body.notes);
     }
 
@@ -77,9 +76,15 @@ export async function PUT(
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
     values.push(params.id);
 
-    const result = await query(
-      `UPDATE jobs SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+    query(
+      `UPDATE jobs SET ${updates.join(', ')} WHERE id = ?`,
       values
+    );
+
+    // Fetch updated job
+    const result = query(
+      'SELECT * FROM jobs WHERE id = ?',
+      [params.id]
     );
 
     if (result.rows.length === 0) {
@@ -100,17 +105,17 @@ export async function PUT(
 }
 
 // DELETE job
-export async function DELETE(
+export function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const result = await query(
-      'DELETE FROM jobs WHERE id = $1 RETURNING *',
+    const result = query(
+      'DELETE FROM jobs WHERE id = ?',
       [params.id]
     );
 
-    if (result.rows.length === 0) {
+    if (result.rowCount === 0) {
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }

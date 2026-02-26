@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db/client';
-import { Job, CreateJobInput, UpdateJobInput } from '@/lib/types';
+import { Job, CreateJobInput } from '@/lib/types';
 
 // GET all jobs
-export async function GET() {
+export function GET() {
   try {
-    const result = await query(
+    const result = query(
       'SELECT * FROM jobs ORDER BY date_applied DESC'
     );
     return NextResponse.json(result.rows as Job[]);
@@ -32,14 +32,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await query(
+    const result = query(
       `INSERT INTO jobs (company, position, url, date_applied, status, notes)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [company, position, url || null, date_applied, status, notes || null]
     );
 
-    return NextResponse.json(result.rows[0] as Job, { status: 201 });
+    // Get the inserted job
+    const getResult = query(
+      'SELECT * FROM jobs WHERE id = (SELECT last_insert_rowid())'
+    );
+
+    return NextResponse.json(getResult.rows[0] as Job, { status: 201 });
   } catch (error) {
     console.error('POST error:', error);
     return NextResponse.json(
