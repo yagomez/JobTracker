@@ -24,7 +24,7 @@ export default function Home() {
       setJobs(data);
       setError(null);
     } catch (err) {
-      setError('Failed to load jobs. Check your database connection.');
+      setError('Unable to load jobs. Please check your database connection and try refreshing the page.');
       console.error(err);
     } finally {
       setIsLoading(false);

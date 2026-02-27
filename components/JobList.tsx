@@ -51,7 +51,7 @@ export function JobList({
   };
 
   if (jobs.length === 0) {
-    return <div className="text-center py-8 text-gray-500">No jobs yet!</div>;
+    return <div className="text-center py-8 text-gray-500">No jobs applied to yet. Start adding your applications above!</div>;
   }
 
   return (
