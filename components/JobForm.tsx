@@ -19,9 +19,56 @@ export function JobForm({ onSubmit, initialData, isLoading = false }: JobFormPro
     notes: initialData?.notes || '',
   });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadedResume, setUploadedResume] = useState<string | null>(initialData?.resume_path || null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadError(null);
+    }
+  };
+
+  const handleResumeUpload = async (jobId: number) => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const formDataObj = new FormData();
+      formDataObj.append('resume', selectedFile);
+      formDataObj.append('jobId', jobId.toString());
+
+      const response = await fetch('/api/jobs/upload-resume', {
+        method: 'POST',
+        body: formDataObj,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload resume');
+      }
+
+      const data = await response.json();
+      setUploadedResume(data.resume_path);
+      setSelectedFile(null);
+      // Reset file input
+      const fileInput = document.getElementById('resume-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload resume');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,6 +154,54 @@ export function JobForm({ onSubmit, initialData, isLoading = false }: JobFormPro
             className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
             placeholder="Any additional notes..."
           />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700">Resume</label>
+          <p className="text-sm text-gray-600 mb-2">Upload the resume version used for this application</p>
+          
+          {uploadError && (
+            <div className="mb-3 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+              {uploadError}
+            </div>
+          )}
+
+          {uploadedResume ? (
+            <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded flex items-center justify-between">
+              <span className="text-sm text-green-700">✓ Resume uploaded</span>
+              <a
+                href={uploadedResume}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Download
+              </a>
+            </div>
+          ) : null}
+
+          <div className="flex gap-2">
+            <input
+              id="resume-input"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleFileChange}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+            />
+            {selectedFile && (
+              <button
+                type="button"
+                onClick={() => handleResumeUpload(initialData?.id || 0)}
+                disabled={isUploading || !initialData?.id}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-md font-medium"
+              >
+                {isUploading ? 'Uploading...' : 'Upload'}
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {selectedFile ? `Selected: ${selectedFile.name}` : 'PDF, DOC, or DOCX files only'}
+          </p>
         </div>
       </div>
 

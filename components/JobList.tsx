@@ -97,6 +97,20 @@ export function JobList({
               </div>
             )}
 
+            {status.resume_path && (
+              <div className="mb-4 p-3 bg-blue-50 rounded border-l-2 border-blue-400 flex items-center justify-between">
+                <span className="text-sm text-gray-700">📄 Resume attached</span>
+                <a
+                  href={status.resume_path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Download
+                </a>
+              </div>
+            )}
+
             <div className="text-xs text-gray-500 mb-4">
               Applied: {new Date(job.date_applied).toLocaleDateString()}
             </div>

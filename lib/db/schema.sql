@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   posting_status TEXT DEFAULT 'unknown',
   last_checked DATETIME,
   status_notes TEXT,
+  resume_path TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
