@@ -1,8 +1,4 @@
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Global Error - Job Tracker',
-};
+'use client';
 
 export default function GlobalError({
   error,
