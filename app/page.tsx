@@ -67,26 +67,26 @@ export default function Home() {
   return (
     <div className="space-y-8">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded">
           {error}
         </div>
       )}
 
       <section>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Add New Application</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">Add New Application</h2>
         <JobForm onSubmit={handleAddJob} />
       </section>
 
       <section>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Your Applications</h2>
-          <div className="text-sm text-gray-600">
+          <h2 className="text-2xl font-bold text-white">Your Applications</h2>
+          <div className="text-sm text-olive-100">
             Total: {jobs.length} | Applied: {jobs.filter(j => j.status === 'applied').length} | Interviewing: {jobs.filter(j => j.status === 'interviewing').length} | Offered: {jobs.filter(j => j.status === 'offered').length}
           </div>
         </div>
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Loading jobs...</p>
+            <p className="text-olive-200">Loading jobs...</p>
           </div>
         ) : (
           <JobList jobs={jobs} onDelete={handleDeleteJob} isDeleting={isDeleting} />

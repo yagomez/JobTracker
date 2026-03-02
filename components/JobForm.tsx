@@ -77,65 +77,65 @@ export function JobForm({ onSubmit, initialData, isLoading = false }: JobFormPro
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-4">
+    <form onSubmit={handleSubmit} className="bg-olive-700/90 p-6 rounded-lg shadow-lg border border-olive-600 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Company *</label>
+          <label className="block text-sm font-medium text-white">Company *</label>
           <input
             type="text"
             name="company"
             value={formData.company}
             onChange={handleChange}
             required
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+            className="mt-1 w-full px-3 py-2 border border-olive-500 rounded-md bg-olive-800/50 text-white placeholder-olive-300 focus:outline-none focus:ring-2 focus:ring-olive-400"
             placeholder="e.g., Google"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Position *</label>
+          <label className="block text-sm font-medium text-white">Position *</label>
           <input
             type="text"
             name="position"
             value={formData.position}
             onChange={handleChange}
             required
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+            className="mt-1 w-full px-3 py-2 border border-olive-500 rounded-md bg-olive-800/50 text-white placeholder-olive-300 focus:outline-none focus:ring-2 focus:ring-olive-400"
             placeholder="e.g., Software Engineer"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Job URL</label>
+          <label className="block text-sm font-medium text-white">Job URL</label>
           <input
             type="url"
             name="url"
             value={formData.url}
             onChange={handleChange}
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+            className="mt-1 w-full px-3 py-2 border border-olive-500 rounded-md bg-olive-800/50 text-white placeholder-olive-300 focus:outline-none focus:ring-2 focus:ring-olive-400"
             placeholder="https://..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Date Applied *</label>
+          <label className="block text-sm font-medium text-white">Date Applied *</label>
           <input
             type="date"
             name="date_applied"
             value={formData.date_applied}
             onChange={handleChange}
             required
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+            className="mt-1 w-full px-3 py-2 border border-olive-500 rounded-md bg-olive-800/50 text-white focus:outline-none focus:ring-2 focus:ring-olive-400"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Status</label>
+          <label className="block text-sm font-medium text-white">Status</label>
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+            className="mt-1 w-full px-3 py-2 border border-olive-500 rounded-md bg-olive-800/50 text-white focus:outline-none focus:ring-2 focus:ring-olive-400"
           >
             <option value="applied">Applied</option>
             <option value="interviewing">Interviewing</option>
@@ -145,35 +145,35 @@ export function JobForm({ onSubmit, initialData, isLoading = false }: JobFormPro
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Notes</label>
+          <label className="block text-sm font-medium text-white">Notes</label>
           <textarea
             name="notes"
             value={formData.notes}
             onChange={handleChange}
             rows={4}
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+            className="mt-1 w-full px-3 py-2 border border-olive-500 rounded-md bg-olive-800/50 text-white placeholder-olive-300 focus:outline-none focus:ring-2 focus:ring-olive-400"
             placeholder="Any additional notes..."
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Resume</label>
-          <p className="text-sm text-gray-600 mb-2">Upload the resume version used for this application</p>
+          <label className="block text-sm font-medium text-white">Resume</label>
+          <p className="text-sm text-olive-200 mb-2">Upload the resume version used for this application</p>
           
           {uploadError && (
-            <div className="mb-3 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+            <div className="mb-3 p-2 bg-red-900/50 border border-red-400 text-red-100 rounded text-sm">
               {uploadError}
             </div>
           )}
 
           {uploadedResume ? (
-            <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded flex items-center justify-between">
-              <span className="text-sm text-green-700">✓ Resume uploaded</span>
+            <div className="mb-3 p-3 bg-olive-800/70 border border-olive-500 rounded flex items-center justify-between">
+              <span className="text-sm text-olive-100">✓ Resume uploaded</span>
               <a
                 href={uploadedResume}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                className="text-sm text-olive-200 hover:text-white underline"
               >
                 Download
               </a>
@@ -186,20 +186,20 @@ export function JobForm({ onSubmit, initialData, isLoading = false }: JobFormPro
               type="file"
               accept=".pdf,.doc,.docx"
               onChange={handleFileChange}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-olive-500 rounded-md bg-olive-800/50 text-white focus:outline-none focus:ring-2 focus:ring-olive-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-olive-600 file:text-white"
             />
             {selectedFile && (
               <button
                 type="button"
                 onClick={() => handleResumeUpload(initialData?.id || 0)}
                 disabled={isUploading || !initialData?.id}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-md font-medium"
+                className="px-4 py-2 bg-olive-600 hover:bg-olive-500 disabled:bg-olive-800 text-white rounded-md font-medium"
               >
                 {isUploading ? 'Uploading...' : 'Upload'}
               </button>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-olive-200 mt-1">
             {selectedFile ? `Selected: ${selectedFile.name}` : 'PDF, DOC, or DOCX files only'}
           </p>
         </div>
@@ -208,7 +208,7 @@ export function JobForm({ onSubmit, initialData, isLoading = false }: JobFormPro
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded"
+        className="w-full bg-olive-600 hover:bg-olive-500 disabled:bg-olive-800 text-white font-bold py-2 px-4 rounded"
       >
         {isLoading ? 'Saving...' : initialData ? 'Update Job' : 'Add Job'}
       </button>
