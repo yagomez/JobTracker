@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db/client';
+import { Job } from '@/lib/types';
 import { DEMO_JOBS } from '@/lib/demo-data';
 
 function isDemoMode(request: NextRequest): boolean {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
       });
     }
     const result = query('SELECT * FROM jobs WHERE id = ?', [jobId]);
-    const job = result.rows[0];
+    const job = result.rows[0] as Job | undefined;
     
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
