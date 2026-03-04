@@ -21,3 +21,13 @@ CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_date_applied ON jobs(date_applied);
 CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at);
 CREATE INDEX IF NOT EXISTS idx_jobs_posting_status ON jobs(posting_status);
+
+-- No-apply list: companies you do not want to apply to (reason + optional notes)
+CREATE TABLE IF NOT EXISTS no_apply_companies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_name TEXT NOT NULL UNIQUE,
+  reason TEXT NOT NULL,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_no_apply_company_name ON no_apply_companies(company_name);

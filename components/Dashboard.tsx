@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Job } from '@/lib/types';
+import { useEffect, useState, useCallback } from 'react';
+import { Job, NoApplyCompany } from '@/lib/types';
 import { JobForm } from '@/components/JobForm';
 import { JobList } from '@/components/JobList';
 import { ApplicationsCalendar } from '@/components/ApplicationsCalendar';
@@ -16,17 +16,32 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'analytics' | 'search'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'analytics' | 'search' | 'no-apply'>('list');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [searchCompany, setSearchCompany] = useState('');
   const [searchTitle, setSearchTitle] = useState('');
   const [searchDateFrom, setSearchDateFrom] = useState('');
   const [searchDateTo, setSearchDateTo] = useState('');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [noApplyList, setNoApplyList] = useState<NoApplyCompany[]>([]);
+
+  const fetchNoApplyList = useCallback(async () => {
+    try {
+      const res = await fetch('/api/no-apply', { headers: demoHeaders(isDemo) });
+      const data = await res.json();
+      setNoApplyList(Array.isArray(data.list) ? data.list : []);
+    } catch {
+      setNoApplyList([]);
+    }
+  }, [isDemo]);
 
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  useEffect(() => {
+    fetchNoApplyList();
+  }, [fetchNoApplyList]);
 
   useEffect(() => {
     if (editingJob) {
@@ -177,6 +192,7 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
           initialData={editingJob ?? undefined}
           onSubmit={editingJob ? (data) => handleUpdateJob(editingJob.id, data) : handleAddJob}
           isDemo={isDemo}
+          onNoApplyAdded={fetchNoApplyList}
         />
       </section>
 
@@ -235,10 +251,21 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
               >
                 Analytics
               </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('no-apply')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                  viewMode === 'no-apply'
+                    ? 'bg-olive-600 text-white shadow-sm'
+                    : 'text-olive-700 hover:bg-olive-300/70'
+                }`}
+              >
+                Blacklist
+              </button>
             </div>
           </div>
         </div>
-        {isLoading ? (
+        {isLoading && viewMode !== 'no-apply' ? (
           <div className="text-center py-12">
             <p className="text-olive-600">Loading jobs...</p>
           </div>
@@ -366,6 +393,35 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
               </div>
             ) : (
               <JobList jobs={searchResults} onDelete={handleDeleteJob} onEdit={setEditingJob} isDeleting={isDeleting} isDemo={isDemo} />
+            )}
+          </div>
+        ) : viewMode === 'no-apply' ? (
+          <div className="space-y-4">
+            <p className="text-sm text-olive-600">
+              Companies on this list show a warning when you type their name in the job form. Add more via &ldquo;Blacklist an Employer&rdquo; in the form above.
+            </p>
+            {noApplyList.length === 0 ? (
+              <div className="bg-white border border-olive-200 rounded-xl p-6 text-center text-olive-600 text-sm">
+                No companies on your blacklist yet. Use &ldquo;Blacklist an Employer&rdquo; in the form above to add one.
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {noApplyList.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm"
+                  >
+                    <div className="font-semibold text-olive-900">{entry.company_name}</div>
+                    <div className="text-sm text-olive-700 mt-1">Reason: {entry.reason}</div>
+                    {entry.notes && (
+                      <div className="text-sm text-olive-600 mt-1">Details: {entry.notes}</div>
+                    )}
+                    <div className="text-xs text-olive-500 mt-2">
+                      Added {new Date(entry.created_at).toLocaleDateString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         ) : (

@@ -78,6 +78,18 @@ Notes:
 - If the `jobs` table already has rows, it will **skip seeding** to avoid mixing with real data.
 - For your personal tracker, just don’t run the seed command; use the UI normally to add your own applications.
 
+### No-apply list
+
+When you type a company name in the job form, the app checks a **Do Not Apply** list. If the company is on that list, a warning appears with the reason (e.g. "Sent rejection to my work email").
+
+**Adding companies to the list:** The table is created automatically on first use. Add entries via SQLite:
+
+```bash
+sqlite3 data/job_tracker.db "INSERT INTO no_apply_companies (company_name, reason) VALUES ('Company Name', 'Sent rejection to work email.');"
+```
+
+Matching is **case-insensitive** and trims spaces. You can still submit the form; the warning is informational.
+
 ## Project Structure
 
 ```

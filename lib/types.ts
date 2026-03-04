@@ -36,3 +36,11 @@ export interface UpdateJobInput {
   posting_status?: 'active' | 'filled' | 'removed' | 'archived' | 'unknown';
   status_notes?: string;
 }
+
+export interface NoApplyCompany {
+  id: number;
+  company_name: string;
+  reason: string;
+  notes?: string | null;
+  created_at: string;
+}

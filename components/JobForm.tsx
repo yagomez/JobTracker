@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Job } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import { Job, NoApplyCompany } from '@/lib/types';
 
 /** Today's date in YYYY-MM-DD using the user's local timezone (avoids UTC off-by-one). */
 function getTodayLocal(): string {
@@ -17,9 +17,10 @@ interface JobFormProps {
   initialData?: Job;
   isLoading?: boolean;
   isDemo?: boolean;
+  onNoApplyAdded?: () => void;
 }
 
-export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = false }: JobFormProps) {
+export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = false, onNoApplyAdded }: JobFormProps) {
   const [formData, setFormData] = useState({
     company: initialData?.company || '',
     position: initialData?.position || '',
@@ -33,6 +34,33 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
   const [uploadedResume, setUploadedResume] = useState<string | null>(initialData?.resume_path || null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [noApplyMatch, setNoApplyMatch] = useState<NoApplyCompany | null>(null);
+  const [showNoApplyForm, setShowNoApplyForm] = useState(false);
+  const [noApplyFormData, setNoApplyFormData] = useState({ company_name: '', reason: '', notes: '' });
+  const [noApplySubmitting, setNoApplySubmitting] = useState(false);
+  const [noApplyMessage, setNoApplyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Debounced check: when company name changes, see if it's on the no-apply list
+  useEffect(() => {
+    const company = formData.company.trim();
+    if (company.length < 2) {
+      setNoApplyMatch(null);
+      return;
+    }
+    const t = setTimeout(async () => {
+      try {
+        const url = `/api/no-apply?company=${encodeURIComponent(company)}`;
+        const res = await fetch(url, {
+          headers: isDemo ? { 'x-demo-mode': 'true' } : undefined,
+        });
+        const data = await res.json();
+        setNoApplyMatch(data.match ?? null);
+      } catch {
+        setNoApplyMatch(null);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [formData.company, isDemo]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -82,6 +110,44 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
     }
   };
 
+  const handleNoApplyFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNoApplyFormData(prev => ({ ...prev, [name]: value }));
+    setNoApplyMessage(null);
+  };
+
+  const handleAddNoApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNoApplySubmitting(true);
+    setNoApplyMessage(null);
+    try {
+      const res = await fetch('/api/no-apply', {
+        method: 'POST',
+        headers: isDemo
+          ? { 'Content-Type': 'application/json', 'x-demo-mode': 'true' }
+          : { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_name: noApplyFormData.company_name.trim(),
+          reason: noApplyFormData.reason.trim(),
+          notes: noApplyFormData.notes.trim() || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setNoApplyMessage({ type: 'error', text: data.error || 'Failed to add to list.' });
+        return;
+      }
+      setNoApplyMessage({ type: 'success', text: `"${data.company_name}" added to your blacklist. It will show when you type this company in the job form.` });
+      setNoApplyFormData({ company_name: '', reason: '', notes: '' });
+      setShowNoApplyForm(false);
+      onNoApplyAdded?.();
+    } catch {
+      setNoApplyMessage({ type: 'error', text: 'Failed to add to blacklist.' });
+    } finally {
+      setNoApplySubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -122,6 +188,14 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
             className="mt-1 w-full px-3 py-2 border border-olive-300 rounded-lg bg-white text-olive-900 placeholder-olive-400 focus:outline-none focus:ring-2 focus:ring-olive-400 focus:border-olive-400"
             placeholder="e.g., Google"
           />
+          {noApplyMatch && (
+            <div className="mt-2 p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-sm">
+              <strong>Blacklist:</strong> This company is on your blacklist. Reason: {noApplyMatch.reason}
+              {noApplyMatch.notes && (
+                <p className="mt-2 text-amber-800">Details: {noApplyMatch.notes}</p>
+              )}
+            </div>
+          )}
         </div>
 
         <div>
@@ -244,6 +318,78 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
       >
         {isLoading ? 'Saving...' : initialData ? 'Update Job' : 'Add Job'}
       </button>
+
+      <div className="border-t border-olive-200 pt-4 mt-4">
+        <button
+          type="button"
+          onClick={() => { setShowNoApplyForm(prev => !prev); setNoApplyMessage(null); }}
+          className="w-full py-2 text-sm text-olive-600 hover:text-olive-800 hover:bg-olive-50 rounded-lg transition-colors"
+        >
+          Blacklist an Employer
+        </button>
+
+        {showNoApplyForm && (
+          <form onSubmit={handleAddNoApply} className="mt-4 p-4 bg-olive-50 rounded-xl border border-olive-200 space-y-3">
+            <h3 className="text-sm font-semibold text-olive-800">Blacklist an Employer</h3>
+            <div>
+              <label className="block text-xs font-medium text-olive-700">Company name *</label>
+              <input
+                type="text"
+                name="company_name"
+                value={noApplyFormData.company_name}
+                onChange={handleNoApplyFormChange}
+                required
+                className="mt-1 w-full px-3 py-2 border border-olive-300 rounded-lg bg-white text-olive-900 text-sm"
+                placeholder="e.g., Acme Inc"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-olive-700">Reason for blacklisting *</label>
+              <input
+                type="text"
+                name="reason"
+                value={noApplyFormData.reason}
+                onChange={handleNoApplyFormChange}
+                required
+                className="mt-1 w-full px-3 py-2 border border-olive-300 rounded-lg bg-white text-olive-900 text-sm"
+                placeholder="e.g., Sent rejection to my current work email"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-olive-700">Notes (what they did)</label>
+              <textarea
+                name="notes"
+                value={noApplyFormData.notes}
+                onChange={handleNoApplyFormChange}
+                rows={3}
+                className="mt-1 w-full px-3 py-2 border border-olive-300 rounded-lg bg-white text-olive-900 text-sm"
+                placeholder="Detail exactly what happened..."
+              />
+            </div>
+            {noApplyMessage && (
+              <div className={`p-2 rounded-lg text-sm ${noApplyMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                {noApplyMessage.text}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={noApplySubmitting}
+                className="px-4 py-2 bg-olive-600 hover:bg-olive-500 disabled:bg-olive-300 text-white rounded-lg font-medium text-sm"
+              >
+                {noApplySubmitting ? 'Adding...' : 'Submit'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowNoApplyForm(false); setNoApplyMessage(null); setNoApplyFormData({ company_name: '', reason: '', notes: '' }); }}
+                className="px-4 py-2 border border-olive-300 text-olive-700 rounded-lg text-sm hover:bg-olive-100"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </form>
   );
 }
