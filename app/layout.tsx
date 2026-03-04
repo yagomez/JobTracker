@@ -17,15 +17,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`bg-olive-100 text-white ${bricolage.className}`}>
+      <body className={`bg-olive-50 text-olive-900 ${bricolage.className}`}>
         <div className="min-h-screen">
-          <header className="bg-olive-700 shadow-lg">
-            <div className="max-w-7xl mx-auto px-4 py-6">
-              <h1 className={`text-3xl font-bold text-white ${righteous.className}`}>Job Tracker</h1>
-              <p className="text-olive-100">Track your job applications in one place</p>
+          <header className="bg-olive-800 shadow-md border-b border-olive-700">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5">
+              <h1 className={`text-2xl sm:text-3xl font-bold text-white tracking-tight ${righteous.className}`}>Job Tracker</h1>
+              <p className="text-olive-200 text-sm mt-0.5">Track your job applications in one place</p>
             </div>
           </header>
-          <main className="max-w-7xl mx-auto px-4 py-8">
+          <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
             {children}
           </main>
         </div>

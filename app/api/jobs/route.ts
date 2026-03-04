@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db/client';
 import { Job, CreateJobInput } from '@/lib/types';
+import { DEMO_JOBS } from '@/lib/demo-data';
+
+function isDemoMode(request: NextRequest): boolean {
+  return request.headers.get('x-demo-mode') === 'true';
+}
 
 // GET all jobs
-export function GET() {
+export function GET(request: NextRequest) {
   try {
+    if (isDemoMode(request)) {
+      return NextResponse.json([...DEMO_JOBS].sort((a, b) => (b.date_applied > a.date_applied ? 1 : -1)));
+    }
     const result = query(
       'SELECT * FROM jobs ORDER BY date_applied DESC'
     );
@@ -21,6 +29,12 @@ export function GET() {
 // POST create new job
 export async function POST(request: NextRequest) {
   try {
+    if (isDemoMode(request)) {
+      return NextResponse.json(
+        { error: 'Demo mode: changes are not saved. Use the full app to add real applications.' },
+        { status: 403 }
+      );
+    }
     const body: CreateJobInput = await request.json();
     
     const { company, position, url, date_applied, status = 'applied', notes } = body;

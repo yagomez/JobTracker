@@ -6,10 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:demo": "node scripts/seed-demo.js"
   },
   "dependencies": {
     "better-sqlite3": "^9.6.0",
+    "cssesc": "^3.0.0",
     "file-uri-to-path": "^2.0.0",
     "next": "^14.0.0",
     "react": "^18.2.0",

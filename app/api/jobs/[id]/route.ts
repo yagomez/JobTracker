@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db/client';
 import { Job, UpdateJobInput } from '@/lib/types';
+import { DEMO_JOBS } from '@/lib/demo-data';
+
+function isDemoMode(request: NextRequest): boolean {
+  return request.headers.get('x-demo-mode') === 'true';
+}
 
 // GET single job
 export function GET(
@@ -8,6 +13,14 @@ export function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (isDemoMode(request)) {
+      const id = parseInt(params.id, 10);
+      const job = DEMO_JOBS.find((j) => j.id === id);
+      if (!job) {
+        return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+      }
+      return NextResponse.json(job);
+    }
     const result = query(
       'SELECT * FROM jobs WHERE id = ?',
       [params.id]
@@ -36,6 +49,12 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (isDemoMode(request)) {
+      return NextResponse.json(
+        { error: 'Demo mode: changes are not saved.' },
+        { status: 403 }
+      );
+    }
     const body: UpdateJobInput = await request.json();
 
     const updates: string[] = [];
@@ -110,6 +129,12 @@ export function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (isDemoMode(request)) {
+      return NextResponse.json(
+        { error: 'Demo mode: changes are not saved.' },
+        { status: 403 }
+      );
+    }
     const result = query(
       'DELETE FROM jobs WHERE id = ?',
       [params.id]

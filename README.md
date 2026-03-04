@@ -39,33 +39,44 @@ cd JobTracker
 npm install
 ```
 
-3. Set up your database:
-
-```bash
-# Create a PostgreSQL database
-createdb job_tracker
-
-# Run the schema
-psql job_tracker < lib/db/schema.sql
-```
-
-4. Configure environment variables:
-
-```bash
-# Copy the example file
-cp .env.example .env.local
-
-# Edit .env.local with your database credentials
-# DATABASE_URL=postgresql://username:password@localhost:5432/job_tracker
-```
-
-5. Run the development server:
+3. Run the development server:
 
 ```bash
 npm run dev
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### (Optional) AI insights setup
+
+To enable the AI-powered insights in the **Analytics** view, add an OpenAI API key:
+
+```bash
+cp .env.example .env.local   # if you have an example file
+```
+
+Then set:
+
+```bash
+OPENAI_API_KEY=your_api_key_here
+```
+
+Restart the dev server after changing environment variables.
+
+### Seeding demo data (for GitHub demos)
+
+By default, the app uses a local SQLite database at `data/job_tracker.db`. Database files are **not committed** to Git to keep your personal applications private.
+
+If you want to show a filled-out demo (locally or in a deployment), you can seed fake data:
+
+```bash
+npm run seed:demo
+```
+
+Notes:
+- The seed script will **create the DB and tables if they do not exist**.
+- If the `jobs` table already has rows, it will **skip seeding** to avoid mixing with real data.
+- For your personal tracker, just don’t run the seed command; use the UI normally to add your own applications.
 
 ## Project Structure
 

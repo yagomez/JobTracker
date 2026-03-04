@@ -7,6 +7,12 @@ const UPLOAD_DIR = join(process.cwd(), 'public', 'resumes');
 
 export async function POST(request: NextRequest) {
   try {
+    if (request.headers.get('x-demo-mode') === 'true') {
+      return NextResponse.json(
+        { error: 'Demo mode: uploads are not saved.' },
+        { status: 403 }
+      );
+    }
     const formData = await request.formData();
     const file = formData.get('resume') as File;
     const jobId = formData.get('jobId') as string;

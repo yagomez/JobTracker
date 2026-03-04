@@ -2,8 +2,8 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Olive theme: ensure inputs and selects inherit colors */
+/* Olive theme: ensure select options have sufficient contrast */
 select option {
-  background: #303a1e;
-  color: #fff;
+  background: #fff;
+  color: #181f0f;
 }
