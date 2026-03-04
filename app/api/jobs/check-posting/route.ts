@@ -41,11 +41,14 @@ export async function POST(request: NextRequest) {
     let statusNotes = '';
     
     try {
-      const response = await fetch(job.url, { 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(job.url, {
         method: 'HEAD',
         headers: { 'User-Agent': 'Mozilla/5.0' },
-        timeout: 10000
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       
       if (response.status === 200) {
         postingStatus = 'active';
