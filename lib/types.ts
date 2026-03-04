@@ -7,6 +7,7 @@ export interface Job {
   status: 'applied' | 'interviewing' | 'rejected' | 'offered';
   last_update: string;
   notes?: string;
+  resume_path?: string;
   posting_status: 'active' | 'filled' | 'removed' | 'archived' | 'unknown';
   last_checked?: string;
   status_notes?: string;
