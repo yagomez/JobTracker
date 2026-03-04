@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db/client';
+import { query, getClient } from '@/lib/db/client';
 import { Job, UpdateJobInput } from '@/lib/types';
 import { DEMO_JOBS } from '@/lib/demo-data';
 
 function isDemoMode(request: NextRequest): boolean {
   return request.headers.get('x-demo-mode') === 'true';
+}
+
+function ensureJobsRejectionColumns() {
+  const db = getClient();
+  try {
+    db.exec('ALTER TABLE jobs ADD COLUMN date_rejected TEXT');
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec('ALTER TABLE jobs ADD COLUMN rejection_source TEXT');
+  } catch {
+    /* column exists */
+  }
 }
 
 // GET single job
@@ -21,6 +35,7 @@ export function GET(
       }
       return NextResponse.json(job);
     }
+    ensureJobsRejectionColumns();
     const result = query(
       'SELECT * FROM jobs WHERE id = ?',
       [params.id]
@@ -83,6 +98,14 @@ export async function PUT(
     if (body.notes !== undefined) {
       updates.push(`notes = ?`);
       values.push(body.notes);
+    }
+    if (body.date_rejected !== undefined) {
+      updates.push(`date_rejected = ?`);
+      values.push(body.date_rejected);
+    }
+    if (body.rejection_source !== undefined) {
+      updates.push(`rejection_source = ?`);
+      values.push(body.rejection_source);
     }
 
     if (updates.length === 0) {

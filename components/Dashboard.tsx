@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Job, NoApplyCompany } from '@/lib/types';
 import { JobForm } from '@/components/JobForm';
 import { JobList } from '@/components/JobList';
@@ -24,13 +24,26 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
   const [searchDateTo, setSearchDateTo] = useState('');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [noApplyList, setNoApplyList] = useState<NoApplyCompany[]>([]);
+  const [noApplyError, setNoApplyError] = useState<string | null>(null);
+
+  const blacklistedCompanyNames = useMemo(
+    () => new Set(noApplyList.map((e) => (e.company_name || '').trim().toLowerCase())),
+    [noApplyList]
+  );
 
   const fetchNoApplyList = useCallback(async () => {
+    setNoApplyError(null);
     try {
       const res = await fetch('/api/no-apply', { headers: demoHeaders(isDemo) });
       const data = await res.json();
+      if (!res.ok) {
+        setNoApplyError(data.error || 'Failed to load blacklist.');
+        setNoApplyList([]);
+        return;
+      }
       setNoApplyList(Array.isArray(data.list) ? data.list : []);
     } catch {
+      setNoApplyError('Failed to load blacklist.');
       setNoApplyList([]);
     }
   }, [isDemo]);
@@ -100,6 +113,25 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : 'Failed to update job');
+    }
+  }
+
+  async function handleMarkRejected(id: number): Promise<void> {
+    try {
+      const res = await fetch(`/api/jobs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...demoHeaders(isDemo) },
+        body: JSON.stringify({ status: 'rejected' }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update job');
+      }
+      await fetchJobs();
+      alert('Marked as rejected. This will show in Analytics.');
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Failed to mark as rejected');
     }
   }
 
@@ -201,7 +233,7 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
           <div>
             <h2 className="text-xl font-bold text-olive-900">Your Applications</h2>
             <div className="text-sm text-olive-700 mt-0.5">
-              Total: {jobs.length} · Applied: {jobs.filter((j) => j.status === 'applied').length} · Interviewing: {jobs.filter((j) => j.status === 'interviewing').length} · Offered: {jobs.filter((j) => j.status === 'offered').length}
+              Total: {jobs.length} · Applied: {jobs.filter((j) => j.status === 'applied').length} · Interviewing: {jobs.filter((j) => j.status === 'interviewing').length} · Rejected: {jobs.filter((j) => j.status === 'rejected').length} · Offered: {jobs.filter((j) => j.status === 'offered').length}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -253,7 +285,10 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('no-apply')}
+                onClick={() => {
+                  setViewMode('no-apply');
+                  fetchNoApplyList();
+                }}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   viewMode === 'no-apply'
                     ? 'bg-olive-600 text-white shadow-sm'
@@ -270,7 +305,7 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
             <p className="text-olive-600">Loading jobs...</p>
           </div>
         ) : viewMode === 'list' ? (
-          <JobList jobs={jobs} onDelete={handleDeleteJob} onEdit={setEditingJob} isDeleting={isDeleting} isDemo={isDemo} />
+          <JobList jobs={jobs} onDelete={handleDeleteJob} onEdit={setEditingJob} onMarkRejected={handleMarkRejected} blacklistedCompanyNames={blacklistedCompanyNames} isDeleting={isDeleting} isDemo={isDemo} />
         ) : viewMode === 'calendar' ? (
           <div className="space-y-4">
             <ApplicationsCalendar
@@ -392,7 +427,7 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
                 No applications match the current search. Try adjusting the company, role, or date range.
               </div>
             ) : (
-              <JobList jobs={searchResults} onDelete={handleDeleteJob} onEdit={setEditingJob} isDeleting={isDeleting} isDemo={isDemo} />
+              <JobList jobs={searchResults} onDelete={handleDeleteJob} onEdit={setEditingJob} onMarkRejected={handleMarkRejected} blacklistedCompanyNames={blacklistedCompanyNames} isDeleting={isDeleting} isDemo={isDemo} />
             )}
           </div>
         ) : viewMode === 'no-apply' ? (
@@ -400,11 +435,23 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
             <p className="text-sm text-olive-600">
               Companies on this list show a warning when you type their name in the job form. Add more via &ldquo;Blacklist an Employer&rdquo; in the form above.
             </p>
-            {noApplyList.length === 0 ? (
+            {noApplyError && (
+              <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm flex items-center justify-between gap-2">
+                <span>{noApplyError}</span>
+                <button
+                  type="button"
+                  onClick={() => fetchNoApplyList()}
+                  className="px-2 py-1 rounded bg-red-100 hover:bg-red-200 text-red-900 text-xs font-medium"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {noApplyList.length === 0 && !noApplyError ? (
               <div className="bg-white border border-olive-200 rounded-xl p-6 text-center text-olive-600 text-sm">
                 No companies on your blacklist yet. Use &ldquo;Blacklist an Employer&rdquo; in the form above to add one.
               </div>
-            ) : (
+            ) : noApplyList.length > 0 ? (
               <ul className="space-y-3">
                 {noApplyList.map((entry) => (
                   <li
@@ -422,7 +469,7 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
                   </li>
                 ))}
               </ul>
-            )}
+            ) : null}
           </div>
         ) : (
           <ApplicationsAnalytics jobs={jobs} />

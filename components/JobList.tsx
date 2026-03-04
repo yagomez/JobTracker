@@ -7,16 +7,21 @@ export function JobList({
   jobs,
   onDelete,
   onEdit,
+  onMarkRejected,
+  blacklistedCompanyNames,
   isDeleting,
   isDemo = false,
 }: {
   jobs: Job[];
   onDelete: (id: number) => void;
   onEdit?: (job: Job) => void;
+  onMarkRejected?: (id: number) => void;
+  blacklistedCompanyNames?: Set<string>;
   isDeleting?: number | null;
   isDemo?: boolean;
 }) {
   const [checkingId, setCheckingId] = useState<number | null>(null);
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [updatedStatuses, setUpdatedStatuses] = useState<Record<number, any>>({});
 
   const handleCheckPosting = async (jobId: number, url?: string) => {
@@ -65,6 +70,7 @@ export function JobList({
     <div className="space-y-4">
       {jobs.map((job) => {
         const status = updatedStatuses[job.id] || job;
+        const isBlacklisted = blacklistedCompanyNames?.has((job.company || '').trim().toLowerCase());
         return (
           <div key={job.id} className="bg-white p-5 rounded-xl shadow-sm border border-olive-200 border-l-4 border-l-olive-500">
             <div className="flex justify-between items-start mb-3">
@@ -72,10 +78,15 @@ export function JobList({
                 <h3 className="text-lg font-semibold text-olive-900">{job.position}</h3>
                 <p className="text-olive-600 text-sm">{job.company}</p>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
                 <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-medium bg-olive-100 text-olive-800">{job.status}</span>
                 {status.posting_status && (
                   <span className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-medium ${getPostingStatusColor(status.posting_status)}`}>{status.posting_status}</span>
+                )}
+                {isBlacklisted && (
+                  <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800 border border-red-300">
+                    Blacklisted Company
+                  </span>
                 )}
               </div>
             </div>
@@ -128,7 +139,23 @@ export function JobList({
                   onClick={() => onEdit(job)}
                   className="px-3 py-1.5 text-sm bg-olive-600 text-white rounded-lg hover:bg-olive-500 transition-colors"
                 >
-                  Edit
+                  Update
+                </button>
+              )}
+              {onMarkRejected && job.status !== 'rejected' && (
+                <button
+                  onClick={async () => {
+                    setRejectingId(job.id);
+                    try {
+                      await onMarkRejected(job.id);
+                    } finally {
+                      setRejectingId(null);
+                    }
+                  }}
+                  disabled={rejectingId === job.id}
+                  className="px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-500 disabled:bg-amber-200 disabled:text-amber-800 transition-colors"
+                >
+                  {rejectingId === job.id ? 'Saving…' : 'Mark as rejected'}
                 </button>
               )}
               <button 

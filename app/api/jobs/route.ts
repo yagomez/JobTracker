@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db/client';
+import { query, getClient } from '@/lib/db/client';
 import { Job, CreateJobInput } from '@/lib/types';
 import { DEMO_JOBS } from '@/lib/demo-data';
 
 function isDemoMode(request: NextRequest): boolean {
   return request.headers.get('x-demo-mode') === 'true';
+}
+
+function ensureJobsRejectionColumns() {
+  const db = getClient();
+  try {
+    db.exec('ALTER TABLE jobs ADD COLUMN date_rejected TEXT');
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec('ALTER TABLE jobs ADD COLUMN rejection_source TEXT');
+  } catch {
+    /* column exists */
+  }
 }
 
 // GET all jobs
@@ -13,6 +27,7 @@ export function GET(request: NextRequest) {
     if (isDemoMode(request)) {
       return NextResponse.json([...DEMO_JOBS].sort((a, b) => (b.date_applied > a.date_applied ? 1 : -1)));
     }
+    ensureJobsRejectionColumns();
     const result = query(
       'SELECT * FROM jobs ORDER BY date_applied DESC'
     );
@@ -37,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
     const body: CreateJobInput = await request.json();
     
-    const { company, position, url, date_applied, status = 'applied', notes } = body;
+    const { company, position, url, date_applied, status = 'applied', notes, date_rejected, rejection_source } = body;
 
     if (!company || !position || !date_applied) {
       return NextResponse.json(
@@ -46,10 +61,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    ensureJobsRejectionColumns();
     const result = query(
-      `INSERT INTO jobs (company, position, url, date_applied, status, notes)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [company, position, url || null, date_applied, status, notes || null]
+      `INSERT INTO jobs (company, position, url, date_applied, status, notes, date_rejected, rejection_source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [company, position, url || null, date_applied, status, notes || null, date_rejected || null, rejection_source || null]
     );
 
     // Get the inserted job

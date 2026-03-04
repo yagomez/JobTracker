@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS jobs (
   last_checked DATETIME,
   status_notes TEXT,
   resume_path TEXT,
+  date_rejected TEXT,
+  rejection_source TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

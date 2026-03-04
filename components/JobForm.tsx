@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Job, NoApplyCompany } from '@/lib/types';
+import { Job, NoApplyCompany, type RejectionSource } from '@/lib/types';
 
 /** Today's date in YYYY-MM-DD using the user's local timezone (avoids UTC off-by-one). */
 function getTodayLocal(): string {
@@ -28,6 +28,8 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
     date_applied: initialData?.date_applied || getTodayLocal(),
     status: initialData?.status || 'applied',
     notes: initialData?.notes || '',
+    date_rejected: initialData?.date_rejected || '',
+    rejection_source: (initialData?.rejection_source as RejectionSource | '') || '',
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -141,6 +143,7 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
       setNoApplyFormData({ company_name: '', reason: '', notes: '' });
       setShowNoApplyForm(false);
       onNoApplyAdded?.();
+      alert('Successfully Blacklisted Employer');
     } catch {
       setNoApplyMessage({ type: 'error', text: 'Failed to add to blacklist.' });
     } finally {
@@ -162,6 +165,8 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
           date_applied: getTodayLocal(),
           status: 'applied',
           notes: '',
+          date_rejected: '',
+          rejection_source: '',
         });
         setSelectedFile(null);
         setUploadedResume(null);
@@ -175,6 +180,7 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-olive-200 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -250,6 +256,38 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
           </select>
         </div>
 
+        {formData.status === 'rejected' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-olive-800">Date rejected</label>
+              <input
+                type="date"
+                name="date_rejected"
+                value={formData.date_rejected}
+                onChange={handleChange}
+                className="mt-1 w-full px-3 py-2 border border-olive-300 rounded-lg bg-white text-olive-900 focus:outline-none focus:ring-2 focus:ring-olive-400"
+              />
+              <p className="text-xs text-olive-600 mt-0.5">When did you receive the rejection? (for analytics)</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-olive-800">How did you hear about the rejection?</label>
+              <select
+                name="rejection_source"
+                value={formData.rejection_source}
+                onChange={handleChange}
+                className="mt-1 w-full px-3 py-2 border border-olive-300 rounded-lg bg-white text-olive-900 focus:outline-none focus:ring-2 focus:ring-olive-400"
+              >
+                <option value="">— Select —</option>
+                <option value="email">Email</option>
+                <option value="ai_generated">AI generated (e.g. automated email)</option>
+                <option value="portal">Job portal / application dashboard</option>
+                <option value="other">Other</option>
+              </select>
+              <p className="text-xs text-olive-600 mt-0.5">Helps AI insights suggest where to focus</p>
+            </div>
+          </>
+        )}
+
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-olive-800">Notes</label>
           <textarea
@@ -318,21 +356,22 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
       >
         {isLoading ? 'Saving...' : initialData ? 'Update Job' : 'Add Job'}
       </button>
+    </form>
 
-      <div className="border-t border-olive-200 pt-4 mt-4">
-        <button
-          type="button"
-          onClick={() => { setShowNoApplyForm(prev => !prev); setNoApplyMessage(null); }}
-          className="w-full py-2 text-sm text-olive-600 hover:text-olive-800 hover:bg-olive-50 rounded-lg transition-colors"
-        >
-          Blacklist an Employer
-        </button>
+    <div className="border-t border-olive-200 pt-4 mt-4">
+      <button
+        type="button"
+        onClick={() => { setShowNoApplyForm(prev => !prev); setNoApplyMessage(null); }}
+        className="w-full py-2 text-sm text-olive-600 hover:text-olive-800 hover:bg-olive-50 rounded-lg transition-colors"
+      >
+        Blacklist an Employer
+      </button>
 
-        {showNoApplyForm && (
-          <form onSubmit={handleAddNoApply} className="mt-4 p-4 bg-olive-50 rounded-xl border border-olive-200 space-y-3">
-            <h3 className="text-sm font-semibold text-olive-800">Blacklist an Employer</h3>
-            <div>
-              <label className="block text-xs font-medium text-olive-700">Company name *</label>
+      {showNoApplyForm && (
+        <form onSubmit={handleAddNoApply} className="mt-4 p-4 bg-olive-50 rounded-xl border border-olive-200 space-y-3">
+          <h3 className="text-sm font-semibold text-olive-800">Blacklist an Employer</h3>
+          <div>
+            <label className="block text-xs font-medium text-olive-700">Company name *</label>
               <input
                 type="text"
                 name="company_name"
@@ -389,7 +428,7 @@ export function JobForm({ onSubmit, initialData, isLoading = false, isDemo = fal
             </div>
           </form>
         )}
-      </div>
-    </form>
+    </div>
+  </>
   );
 }

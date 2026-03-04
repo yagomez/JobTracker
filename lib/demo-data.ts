@@ -15,7 +15,7 @@ export const DEMO_JOBS: Job[] = [
   { id: 5, company: 'DesignCo', position: 'Frontend Engineer', date_applied: '2025-03-03', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 6, company: 'FinanceHub', position: 'Software Engineer', url: 'https://example.com/jobs/6', date_applied: '2025-03-03', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 7, company: 'HealthTech', position: 'Full Stack Engineer', date_applied: '2025-03-03', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
-  { id: 8, company: 'EduPlatform', position: 'Backend Developer', url: 'https://example.com/jobs/8', date_applied: '2025-03-03', status: 'rejected', last_update: now, posting_status: 'filled', created_at: now, updated_at: now },
+  { id: 8, company: 'EduPlatform', position: 'Backend Developer', url: 'https://example.com/jobs/8', date_applied: '2025-03-03', status: 'rejected', last_update: now, posting_status: 'filled', date_rejected: '2025-03-10', rejection_source: 'email', created_at: now, updated_at: now },
   { id: 9, company: 'RetailTech', position: 'Software Engineer', date_applied: '2025-03-03', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 10, company: 'MediaStream', position: 'Product Engineer', url: 'https://example.com/jobs/10', date_applied: '2025-03-03', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 11, company: 'SecurityFirst', position: 'DevOps Engineer', date_applied: '2025-03-03', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
@@ -30,7 +30,7 @@ export const DEMO_JOBS: Job[] = [
   { id: 19, company: 'FoodDelivery', position: 'Backend Developer', url: 'https://example.com/jobs/19', date_applied: '2025-03-04', status: 'interviewing', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 20, company: 'RealEstateTech', position: 'Software Engineer', date_applied: '2025-03-04', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 21, company: 'FitnessApp', position: 'Mobile Engineer', url: 'https://example.com/jobs/21', date_applied: '2025-03-04', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
-  { id: 22, company: 'HRPlatform', position: 'Full Stack Developer', date_applied: '2025-03-04', status: 'rejected', last_update: now, posting_status: 'filled', created_at: now, updated_at: now },
+  { id: 22, company: 'HRPlatform', position: 'Full Stack Developer', date_applied: '2025-03-04', status: 'rejected', last_update: now, posting_status: 'filled', date_rejected: '2025-03-05', rejection_source: 'ai_generated', created_at: now, updated_at: now },
   { id: 23, company: 'AutoTech', position: 'Software Engineer', date_applied: '2025-03-04', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 24, company: 'InsurTech', position: 'Backend Engineer', url: 'https://example.com/jobs/24', date_applied: '2025-03-04', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
   { id: 25, company: 'AgriTech', position: 'Data Engineer', date_applied: '2025-03-04', status: 'applied', last_update: now, posting_status: 'active', created_at: now, updated_at: now },
@@ -43,5 +43,5 @@ export const DEMO_JOBS: Job[] = [
   // Other weekdays – variety
   { id: 30, company: 'Olive Labs', position: 'Frontend Engineer', url: 'https://jobs.example.com/olive', date_applied: '2025-02-28', status: 'interviewing', last_update: now, notes: 'Design system focus.', posting_status: 'active', created_at: now, updated_at: now },
   { id: 31, company: 'Grotesque Studios', position: 'Full Stack Engineer', url: 'https://careers.example.com/fullstack', date_applied: '2025-02-25', status: 'offered', last_update: now, posting_status: 'archived', created_at: now, updated_at: now },
-  { id: 32, company: 'Righteous Tech', position: 'Software Engineer', date_applied: '2025-02-20', status: 'rejected', last_update: now, posting_status: 'filled', created_at: now, updated_at: now },
+  { id: 32, company: 'Righteous Tech', position: 'Software Engineer', date_applied: '2025-02-20', status: 'rejected', last_update: now, posting_status: 'filled', date_rejected: '2025-02-28', rejection_source: 'portal', created_at: now, updated_at: now },
 ];

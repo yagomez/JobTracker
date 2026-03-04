@@ -109,14 +109,29 @@ export async function POST(request: NextRequest) {
     }
 
     ensureNoApplyTable();
-    query(
+    const insertResult = query(
       'INSERT INTO no_apply_companies (company_name, reason, notes) VALUES (?, ?, ?)',
       [company_name, reason, notes]
     );
+    const insertedId = insertResult.rows[0]?.id;
+    if (insertedId == null || insertResult.rowCount !== 1) {
+      console.error('POST no-apply: insert failed or returned no id', { insertResult });
+      return NextResponse.json(
+        { error: 'Failed to save to database. Please try again.' },
+        { status: 500 }
+      );
+    }
     const getResult = query(
-      'SELECT id, company_name, reason, notes, created_at FROM no_apply_companies WHERE id = (SELECT last_insert_rowid())'
+      'SELECT id, company_name, reason, notes, created_at FROM no_apply_companies WHERE id = ?',
+      [insertedId]
     );
     const row = getResult.rows[0] as NoApplyCompany;
+    if (!row) {
+      return NextResponse.json(
+        { error: 'Failed to retrieve saved entry.' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(row, { status: 201 });
   } catch (error: unknown) {
     const message = error && typeof (error as { message?: string }).message === 'string'

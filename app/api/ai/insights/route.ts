@@ -18,7 +18,12 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt =
       "You are an assistant that analyzes a person's job application history and provides concise, practical insights. " +
-      'You are given structured statistics about their applications (counts over time, by status, by company, and by role). ' +
+      'You are given structured statistics: applications over time, by status, by company, and by role. ' +
+      'When rejectionStats is present, use it: totalRejected, bySource (email / ai_generated / portal / other / unknown), dateRejectedCounts. ' +
+      'Interpret how they learn about rejections (e.g. more AI-generated rejections may suggest automating feedback; email vs portal can inform where to check). ' +
+      'When ghostPostStats is present (count > 0): these are roles they were rejected from but the posting still shows as active—common in the current market (ghost posts). ' +
+      'Use ghostPostStats.jobs (company, position, daysSinceRejection, daysSinceApplication) to suggest re-checking postings or being cautious with similar listings. ' +
+      'When trendsSummary is present, use current vs previous period (applicationDelta, rejectionDelta) to comment on momentum and pacing. ' +
       'Identify patterns, strengths, and potential issues, and suggest specific next steps. ' +
       'Keep the tone encouraging but realistic. Avoid restating raw numbers; interpret them.';
 
