@@ -5,7 +5,12 @@ let db: Database.Database;
 
 function getDatabase() {
   if (!db) {
-    const dbPath = process.env.DATABASE_URL?.replace('file:', '') || path.join(process.cwd(), 'data/job_tracker.db');
+    const raw = process.env.DATABASE_URL?.replace(/^file:/i, '').trim() || '';
+    const dbPath = raw
+      ? path.isAbsolute(raw)
+        ? raw
+        : path.resolve(process.cwd(), raw)
+      : path.join(process.cwd(), 'data/job_tracker.db');
     db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
   }

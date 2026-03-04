@@ -16,6 +16,9 @@ export default function DemoPage() {
           This view uses sample applications only. Nothing you add, edit, or delete here is saved.
           To use your real data, use the main app at the root URL.
         </p>
+        <p className="mt-2 text-olive-700">
+          <strong>Blacklist:</strong> Try typing &ldquo;Acme Corp&rdquo; in the Company field to see the blacklist warning. Use the <strong>Blacklist</strong> view to see the demo blacklist.
+        </p>
         <Link
           href="/"
           className="mt-2 inline-block text-sm font-medium text-olive-600 underline hover:text-olive-800"
