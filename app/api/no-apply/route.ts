@@ -113,7 +113,8 @@ export async function POST(request: NextRequest) {
       'INSERT INTO no_apply_companies (company_name, reason, notes) VALUES (?, ?, ?)',
       [company_name, reason, notes]
     );
-    const insertedId = insertResult.rows[0]?.id;
+    const insertedRow = insertResult.rows[0] as { id?: number } | undefined;
+    const insertedId = insertedRow?.id;
     if (insertedId == null || insertResult.rowCount !== 1) {
       console.error('POST no-apply: insert failed or returned no id', { insertResult });
       return NextResponse.json(

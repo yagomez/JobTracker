@@ -4,8 +4,13 @@ import { mkdirSync } from 'fs';
 
 const GLOBAL_DB_KEY = '__job_tracker_db';
 
+// Narrowed global object for storing a single shared Database instance
+const globalForDb = globalThis as typeof globalThis & {
+  [GLOBAL_DB_KEY]?: Database.Database;
+};
+
 function getDatabase(): Database.Database {
-  const existing = (globalThis as Record<string, Database.Database | undefined>)[GLOBAL_DB_KEY];
+  const existing = globalForDb[GLOBAL_DB_KEY];
   if (existing) return existing;
 
   const raw = process.env.DATABASE_URL?.replace(/^file:/i, '').trim() || '';
@@ -26,7 +31,7 @@ function getDatabase(): Database.Database {
 
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
-  (globalThis as Record<string, Database.Database>)[GLOBAL_DB_KEY] = db;
+  globalForDb[GLOBAL_DB_KEY] = db;
   return db;
 }
 

@@ -19,6 +19,9 @@ export default function DemoPage() {
         <p className="mt-2 text-olive-700">
           <strong>Blacklist:</strong> Try typing &ldquo;Acme Corp&rdquo; in the Company field to see the blacklist warning. Use the <strong>Blacklist</strong> view to see the demo blacklist.
         </p>
+        <p className="mt-2 text-olive-700">
+          <strong>Analytics:</strong> Open the <strong>Analytics</strong> tab for trends (this period vs previous), rejection insights, rejections over time, and &ldquo;Rejected but still listed as active&rdquo; (ghost post detection). Use <strong>Update</strong> / <strong>Mark as rejected</strong> on the list to try the flow (changes aren&apos;t saved in demo).
+        </p>
         <Link
           href="/"
           className="mt-2 inline-block text-sm font-medium text-olive-600 underline hover:text-olive-800"
