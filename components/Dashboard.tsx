@@ -470,6 +470,18 @@ export function Dashboard({ isDemo = false }: { isDemo?: boolean }) {
                 ))}
               </ul>
             ) : null}
+
+            <div className="mt-6 pt-6 border-t border-olive-200">
+              <p className="text-sm text-olive-700 mb-2">
+                See how other job seekers rate companies for ghost job postings and read reviews from applicants, employees, and ex-employees.
+              </p>
+              <a
+                href="/reviews"
+                className="inline-flex items-center px-4 py-2.5 rounded-lg bg-olive-600 hover:bg-olive-500 text-white text-sm font-semibold shadow-sm transition-colors"
+              >
+                View Blacklist Inc. User Reviews
+              </a>
+            </div>
           </div>
         ) : (
           <ApplicationsAnalytics jobs={jobs} />

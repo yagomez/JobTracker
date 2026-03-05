@@ -21,16 +21,26 @@ function ensureJobsRejectionColumns() {
   }
 }
 
-// GET all jobs
+// GET all jobs, or filter by company (e.g. for job tracker → realtime insights)
 export function GET(request: NextRequest) {
   try {
+    const company = request.nextUrl.searchParams.get('company')?.trim() ?? '';
     if (isDemoMode(request)) {
-      return NextResponse.json([...DEMO_JOBS].sort((a, b) => (b.date_applied > a.date_applied ? 1 : -1)));
+      const list = company
+        ? [...DEMO_JOBS].filter((j) => j.company.toLowerCase().includes(company.toLowerCase()))
+        : [...DEMO_JOBS];
+      return NextResponse.json(list.sort((a, b) => (b.date_applied > a.date_applied ? 1 : -1)));
     }
     ensureJobsRejectionColumns();
-    const result = query(
-      'SELECT * FROM jobs ORDER BY date_applied DESC'
-    );
+    let result;
+    if (company) {
+      result = query(
+        'SELECT * FROM jobs WHERE LOWER(TRIM(company)) = LOWER(TRIM(?)) ORDER BY date_applied DESC',
+        [company]
+      );
+    } else {
+      result = query('SELECT * FROM jobs ORDER BY date_applied DESC');
+    }
     return NextResponse.json(result.rows as Job[]);
   } catch (error) {
     console.error('GET error:', error);
