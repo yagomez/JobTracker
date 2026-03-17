@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20.x"
+    "node": "20.x"
   },
   "scripts": {
     "dev": "echo '\n⏳ Wait for Ready, then open http://127.0.0.1:3001 (first run can take 30-60s).\n' && next dev -p 3001 -H 127.0.0.1",
