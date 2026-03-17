@@ -1,13 +1,15 @@
 /** How the user learned about the rejection (for analytics and AI insights) */
 export type RejectionSource = 'email' | 'ai_generated' | 'portal' | 'other';
 
+export type JobStatus = 'applied' | 'phone_screening' | 'interviewing' | 'rejected' | 'offered';
+
 export interface Job {
   id: number;
   company: string;
   position: string;
   url?: string;
   date_applied: string;
-  status: 'applied' | 'interviewing' | 'rejected' | 'offered';
+  status: JobStatus;
   last_update: string;
   notes?: string;
   resume_path?: string;
@@ -27,7 +29,7 @@ export interface CreateJobInput {
   position: string;
   url?: string;
   date_applied: string;
-  status?: 'applied' | 'interviewing' | 'rejected' | 'offered';
+  status?: JobStatus;
   notes?: string;
   posting_status?: 'active' | 'filled' | 'removed' | 'archived' | 'unknown';
   status_notes?: string;
@@ -40,7 +42,7 @@ export interface UpdateJobInput {
   position?: string;
   url?: string;
   date_applied?: string;
-  status?: 'applied' | 'interviewing' | 'rejected' | 'offered';
+  status?: JobStatus;
   notes?: string;
   posting_status?: 'active' | 'filled' | 'removed' | 'archived' | 'unknown';
   status_notes?: string;
@@ -245,6 +247,27 @@ export interface ExEmployeeFeedback {
   parental_leave_accommodating: ParentalLeaveAccommodating | null;
   feedback_text: string | null;
   created_at: string;
+}
+
+/** Interview prep data for a job (phone_screening or interviewing) */
+export interface InterviewPrepChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+export interface InterviewPrepLeetcodeLink {
+  url: string;
+  label: string;
+}
+
+export interface InterviewPrep {
+  job_id: number;
+  role_description: string;
+  study_topics: string[];
+  leetcode_links: InterviewPrepLeetcodeLink[];
+  checklist: InterviewPrepChecklistItem[];
+  updated_at: string;
 }
 
 export interface CreateExEmployeeFeedbackInput {

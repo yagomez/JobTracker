@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
-import { Righteous, Bricolage_Grotesque } from 'next/font/google';
+import Image from 'next/image';
+import Link from 'next/link';
 import './globals.css';
 import { RootLayoutWrapper } from '@/components/RootLayoutWrapper';
-
-const righteous = Righteous({ weight: '400', subsets: ['latin'] });
-const bricolage = Bricolage_Grotesque({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
   title: 'Job Tracker',
@@ -17,21 +15,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const header = (
-    <header className="bg-olive-800 shadow-md border-b border-olive-700">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5">
-        <h1 className={`text-2xl sm:text-3xl font-bold text-white tracking-tight ${righteous.className}`}>Job Tracker</h1>
-        <p className="text-olive-200 text-sm mt-0.5">Track your job applications in one place</p>
+    <header className="bg-zinc-900/50 border-b border-zinc-800">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
+        <Link href="/" className="flex items-center shrink-0" aria-label="Job Tracker home">
+          <span className="text-zinc-400 text-sm font-medium">Job Tracker</span>
+        </Link>
       </div>
     </header>
   );
   return (
     <html lang="en">
-      <body className={`bg-olive-50 text-olive-900 ${bricolage.className}`}>
-        <div className="min-h-screen">
-          <RootLayoutWrapper header={header} mainClassName="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-            {children}
-          </RootLayoutWrapper>
-        </div>
+      <body className="bg-zinc-950 text-zinc-100 min-h-screen">
+        <RootLayoutWrapper header={header} mainClassName="min-h-screen">
+          {children}
+        </RootLayoutWrapper>
       </body>
     </html>
   );

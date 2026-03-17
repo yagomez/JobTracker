@@ -3,25 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "22.x"
+    "node": ">=20.x"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "echo '\n⏳ Wait for Ready, then open http://127.0.0.1:3001 (first run can take 30-60s).\n' && next dev -p 3001 -H 127.0.0.1",
+    "dev:clean": "rm -rf .next && npm run dev",
+    "dev:8080": "next dev -p 8080 -H 127.0.0.1",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit-tests",
+    "test:integration": "vitest run tests/integration-tests",
     "seed:demo": "node scripts/seed-demo.js"
   },
   "dependencies": {
+    "@huggingface/inference": "^4.13.15",
     "better-sqlite3": "^9.6.0",
     "cssesc": "^3.0.0",
     "file-uri-to-path": "^2.0.0",
     "next": "^14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^9.1.0",
     "recharts": "^3.7.0"
   },
   "devDependencies": {

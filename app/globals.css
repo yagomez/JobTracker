@@ -2,8 +2,8 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Olive theme: ensure select options have sufficient contrast */
+/* AI Job Tracking Dashboard theme: select options */
 select option {
   background: #fff;
-  color: #181f0f;
+  color: #1e1b4b;
 }

@@ -13,3 +13,4 @@ build/
 *.tsbuildinfo
 
 data/*.db*
+data/test_job_tracker.db

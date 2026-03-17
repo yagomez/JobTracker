@@ -1,8 +1,8 @@
-name: CI
+# PR Pipeline: Runs on pull requests to main.
+# All steps must pass for the PR to be mergeable (use branch protection rules).
+name: PR Pipeline
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Install

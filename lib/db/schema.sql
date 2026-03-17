@@ -156,3 +156,14 @@ CREATE TABLE IF NOT EXISTS realtime_application_insights (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_realtime_insights_company ON realtime_application_insights(company_name);
+
+-- Interview prep: one-stop prep for jobs in phone_screening or interviewing
+CREATE TABLE IF NOT EXISTS interview_prep (
+  job_id INTEGER PRIMARY KEY,
+  role_description TEXT DEFAULT '',
+  study_topics TEXT DEFAULT '[]',
+  leetcode_links TEXT DEFAULT '[]',
+  checklist TEXT DEFAULT '[]',
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+);

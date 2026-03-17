@@ -59,5 +59,3 @@ export function query(sql: string, params?: any[]) {
 export function getClient() {
   return getDatabase();
 }
-
-export default getDatabase();

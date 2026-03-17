@@ -12,8 +12,13 @@ export function RootLayoutWrapper({
   mainClassName: string;
 }) {
   const pathname = usePathname();
-  if (pathname === '/reviews') {
+  const isReviewsApp = pathname === '/reviews' || (pathname?.startsWith('/reviews/') ?? false);
+  const isDashboardApp = pathname === '/' || pathname === '/demo';
+  if (isReviewsApp) {
     return <>{children}</>;
+  }
+  if (isDashboardApp) {
+    return <div className={mainClassName}>{children}</div>;
   }
   return (
     <>

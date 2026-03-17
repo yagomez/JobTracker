@@ -1,0 +1,60 @@
+# Prod Pipeline: Runs when a PR merges into main (push to main).
+# Tests and build must pass before deployment proceeds.
+name: Prod Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  # Deploy step: add your deployment target (Vercel, Netlify, GitHub Pages, etc.)
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Customize deployment for your host (examples below).
+      # Vercel: use vercel/actions or link the repo in Vercel dashboard for auto-deploy.
+      # Netlify: use nwtgql/action-netlify-deploy.
+      # GitHub Pages: use peaceiris/actions-gh-pages (requires next export / static output).
+      - name: Deploy
+        run: echo "Deployment configured in repository settings or external service (Vercel/Netlify). Build passed."

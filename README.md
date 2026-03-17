@@ -49,19 +49,30 @@ npm run dev
 
 ### (Optional) AI insights setup
 
-To enable the AI-powered insights in the **Analytics** view, add an OpenAI API key:
+The **Analytics** view can generate AI-powered insights from your application stats (free via Hugging Face).
+
+1. Create a free Hugging Face account at [huggingface.co/join](https://huggingface.co/join).
+2. Create a **fine-grained** token with **“Make calls to Inference Providers”** (a normal read token will not work). Use this link: [Create token with Inference permission](https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained). Name the token (e.g. `job-tracker-inference`), enable **“Make calls to Inference Providers”**, then create and copy the token.
+3. Copy `.env.example` to `.env.local` if you haven’t already, then add:
 
 ```bash
-cp .env.example .env.local   # if you have an example file
+HUGGINGFACE_HUB_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-Then set:
+4. Restart the dev server after changing environment variables.
 
-```bash
-OPENAI_API_KEY=your_api_key_here
-```
+The app uses **Qwen/Qwen2.5-7B-Instruct** by default. You can switch to another model by setting `HF_MODEL` in `.env.local`. Free-tier rate limits apply.
 
-Restart the dev server after changing environment variables.
+| Model | Best for |
+|-------|----------|
+| `Qwen/Qwen2.5-7B-Instruct` (default) | Balanced quality and speed |
+| `Qwen/Qwen2.5-7B-Instruct-1M` | Large stats payloads; long context |
+| `mistralai/Mistral-7B-Instruct-v0.2` | Fast, strong analytical answers |
+| `meta-llama/Llama-3.2-3B-Instruct` | Quicker, lighter responses |
+| `google/gemma-2-9b-it` | Reliable instruction following |
+| `Microsoft/Phi-3-mini-4k-instruct` | Low latency, compact |
+
+Example: `HF_MODEL=mistralai/Mistral-7B-Instruct-v0.2`. More options: [Hugging Face chat models](https://huggingface.co/models?pipeline_tag=conversational&sort=trending).
 
 ### Seeding demo data (for GitHub demos)
 

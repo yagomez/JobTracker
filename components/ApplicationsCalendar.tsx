@@ -80,20 +80,20 @@ export function ApplicationsCalendar({
   };
 
   return (
-    <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
+    <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={handlePrevMonth}
-          className="px-2.5 py-1 text-xs rounded-lg bg-olive-100 hover:bg-olive-200 text-olive-800 font-medium transition-colors"
+          className="px-2.5 py-1 text-xs rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-medium transition-colors"
         >
           ◀
         </button>
-        <div className="text-sm font-semibold text-olive-900">{monthLabel}</div>
+        <div className="text-sm font-semibold text-zinc-100">{monthLabel}</div>
         <button
           type="button"
           onClick={handleNextMonth}
-          className="px-2.5 py-1 text-xs rounded-lg bg-olive-100 hover:bg-olive-200 text-olive-800 font-medium transition-colors"
+          className="px-2.5 py-1 text-xs rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-medium transition-colors"
         >
           ▶
         </button>
@@ -101,7 +101,7 @@ export function ApplicationsCalendar({
 
       <div className="grid grid-cols-7 gap-1 text-xs mb-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-          <div key={d} className="text-center text-olive-600 font-semibold">
+          <div key={d} className="text-center text-emerald-400 font-semibold">
             {d}
           </div>
         ))}
@@ -125,33 +125,34 @@ export function ApplicationsCalendar({
               key={dateKey}
               type="button"
               onClick={() => onSelectDate(dateKey)}
+              title={`View applications for ${new Date(dateKey + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}`}
               style={day === 1 ? { gridColumnStart: startingWeekday + 1 } : undefined}
               className={[
                 'h-16 rounded-lg border text-left px-1 py-1 flex flex-col justify-between min-h-[4rem] transition-colors',
-                'border-olive-200 bg-olive-50/50 hover:bg-olive-100',
-                isSelected ? 'ring-2 ring-olive-400 bg-olive-100' : '',
-                count > 0 ? 'text-olive-900' : 'text-olive-500',
+                'border-zinc-600 bg-zinc-800/50 hover:bg-zinc-700',
+                isSelected ? 'ring-2 ring-emerald-400 bg-emerald-500/20' : '',
+                count > 0 ? 'text-zinc-100' : 'text-zinc-400',
               ]
                 .filter(Boolean)
                 .join(' ')}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold">{day}</span>
-                {isToday && <span className="text-[10px] text-olive-600 font-medium">Today</span>}
+                {isToday && <span className="text-[10px] text-emerald-400 font-medium">Today</span>}
               </div>
               {count > 0 && (
-                <div className="text-[10px] mt-0.5 bg-olive-200 rounded px-1 py-0.5 text-olive-800">
+                <div className="text-[10px] mt-0.5 bg-emerald-200 rounded px-1 py-0.5 text-emerald-800">
                   {count} {count === 1 ? 'application' : 'applications'}
                 </div>
               )}
               {goalReached && (
-                <div className="mt-0.5 flex items-center gap-0.5 text-[9px] font-semibold text-olive-800 bg-olive-300/80 rounded px-1 py-0.5" title="Goal reached (13+ applications)">
+                <div className="mt-0.5 flex items-center gap-0.5 text-[9px] font-semibold text-emerald-800 bg-emerald-300/80 rounded px-1 py-0.5" title="Goal reached (13+ applications)">
                   <span aria-hidden>✓</span>
                   <span>Goal Reached</span>
                 </div>
               )}
               {boost && !goalReached && (
-                <div className="mt-0.5 flex items-center gap-0.5 text-[9px] font-semibold text-olive-800 bg-olive-200 rounded px-1 py-0.5" title="Weekend applications – going above and beyond">
+                <div className="mt-0.5 flex items-center gap-0.5 text-[9px] font-semibold text-emerald-800 bg-emerald-200 rounded px-1 py-0.5" title="Weekend applications – going above and beyond">
                   <span aria-hidden>🙌</span>
                   <span>Boost</span>
                 </div>

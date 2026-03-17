@@ -1,6 +1,20 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from 'recharts';
 import type { Job } from '@/lib/types';
 
 type DateRange = 'all' | '7d' | '30d' | '90d';
@@ -15,10 +29,12 @@ function parseDate(dateStr: string): Date | null {
 }
 
 export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
-  const [dateRange, setDateRange] = useState<DateRange>('30d');
+  const [dateRange, setDateRange] = useState<DateRange>('all');
   const [companyFilter, setCompanyFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [aiModel, setAiModel] = useState<string | null>(null);
+  const [aiSuggestedReading, setAiSuggestedReading] = useState<Array<{ title: string; url: string }> | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -60,6 +76,7 @@ export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
   const statusStats = useMemo(() => {
     const counts: Record<Job['status'], number> = {
       applied: 0,
+      phone_screening: 0,
       interviewing: 0,
       rejected: 0,
       offered: 0,
@@ -203,6 +220,46 @@ export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
     0,
   );
 
+  /** Chart data for "Insights at a glance" (when AI insights are shown). */
+  const statusPieData = useMemo(() => {
+    const labels: Record<Job['status'], string> = {
+      applied: 'Applied',
+      phone_screening: 'Phone screening',
+      interviewing: 'Interviewing',
+      rejected: 'Rejected',
+      offered: 'Offered',
+    };
+    return (['applied', 'phone_screening', 'interviewing', 'rejected', 'offered'] as const)
+      .filter((s) => (statusStats[s] ?? 0) > 0)
+      .map((status) => ({ name: labels[status], value: statusStats[status] ?? 0 }));
+  }, [statusStats]);
+
+  const timelineChartData = useMemo(
+    () =>
+      timelineStats.map(([date, count]) => ({
+        date: new Date(date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' }),
+        applications: count,
+        fullDate: date,
+      })),
+    [timelineStats],
+  );
+
+  const rejectionSourceChartData = useMemo(() => {
+    if (rejectionStats.totalRejected === 0) return [];
+    const labels: Record<string, string> = {
+      email: 'Email',
+      ai_generated: 'AI generated',
+      portal: 'Portal',
+      other: 'Other',
+      unknown: 'Not specified',
+    };
+    return (['email', 'ai_generated', 'portal', 'other', 'unknown'] as const)
+      .filter((src) => (rejectionStats.bySource[src] ?? 0) > 0)
+      .map((src) => ({ name: labels[src], count: rejectionStats.bySource[src] ?? 0 }));
+  }, [rejectionStats]);
+
+  const CHART_COLORS = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#059669'];
+
   async function handleGenerateInsights() {
     setAiLoading(true);
     setAiError(null);
@@ -251,6 +308,8 @@ export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
 
       const data = await res.json();
       setAiInsights(data.insights || null);
+      setAiModel(data.model || null);
+      setAiSuggestedReading(Array.isArray(data.suggestedReading) ? data.suggestedReading : null);
     } catch (error) {
       console.error(error);
       setAiError(
@@ -262,315 +321,448 @@ export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm flex flex-wrap gap-4">
-        <div>
-          <label className="block text-xs font-medium text-olive-700 mb-1">Date range</label>
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="px-2.5 py-1.5 rounded-lg border border-olive-300 bg-white text-olive-900 text-xs focus:outline-none focus:ring-2 focus:ring-olive-400"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="all">All time</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-olive-700 mb-1">Company</label>
-          <select
-            value={companyFilter}
-            onChange={(e) => setCompanyFilter(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg border border-olive-300 bg-white text-olive-900 text-xs focus:outline-none focus:ring-2 focus:ring-olive-400"
-          >
-            <option value="all">All companies</option>
-            {uniqueCompanies.map((company) => (
-              <option key={company} value={company}>
-                {company}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-olive-700 mb-1">Role</label>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg border border-olive-300 bg-white text-olive-900 text-xs focus:outline-none focus:ring-2 focus:ring-olive-400"
-          >
-            <option value="all">All roles</option>
-            {uniqueRoles.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-medium text-olive-600 mb-1">Total applications</p>
-          <p className="text-2xl font-semibold text-olive-900">{totalApplications}</p>
-        </div>
-        <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-medium text-olive-600 mb-1">Companies applied to</p>
-          <p className="text-2xl font-semibold text-olive-900">{totalCompanies}</p>
-        </div>
-        <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-medium text-olive-600 mb-1">Distinct roles</p>
-          <p className="text-2xl font-semibold text-olive-900">{totalRoles}</p>
-        </div>
-      </div>
-
-      {/* Trends: this period vs previous period */}
-      {trendsSummary && (
-        <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
-          <h3 className="text-olive-900 font-semibold mb-2 text-base">Trends (this period vs previous)</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-olive-600">Applications now</p>
-              <p className="font-semibold text-olive-900">{trendsSummary.currentApplications}</p>
-              <p className="text-xs text-olive-600">vs {trendsSummary.previousApplications} previous</p>
-              {trendsSummary.applicationDelta !== 0 && (
-                <p className={`text-xs font-medium ${trendsSummary.applicationDelta > 0 ? 'text-green-700' : 'text-amber-700'}`}>
-                  {trendsSummary.applicationDelta > 0 ? '+' : ''}{trendsSummary.applicationDelta}
-                </p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs text-olive-600">Rejections now</p>
-              <p className="font-semibold text-olive-900">{trendsSummary.currentRejections}</p>
-              <p className="text-xs text-olive-600">vs {trendsSummary.previousRejections} previous</p>
-              {trendsSummary.rejectionDelta !== 0 && (
-                <p className={`text-xs font-medium ${trendsSummary.rejectionDelta > 0 ? 'text-amber-700' : 'text-green-700'}`}>
-                  {trendsSummary.rejectionDelta > 0 ? '+' : ''}{trendsSummary.rejectionDelta}
-                </p>
-              )}
-            </div>
+    <div className="min-h-full rounded-2xl overflow-hidden bg-zinc-900/50 border border-zinc-700">
+      {/* Analytics header: dark bar with filters */}
+      <header className="bg-zinc-800/80 px-4 py-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700">
+        <h2 className="text-lg font-semibold text-zinc-100 tracking-tight">Analytics</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Date</label>
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value as DateRange)}
+              className="rounded-lg border border-zinc-600 bg-zinc-700 text-zinc-200 text-xs px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+              <option value="all">All time</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Company</label>
+            <select
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+              className="rounded-lg border border-zinc-600 bg-zinc-700 text-zinc-200 text-xs px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="all">All companies</option>
+              {uniqueCompanies.map((company) => (
+                <option key={company} value={company}>
+                  {company}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Role</label>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="rounded-lg border border-zinc-600 bg-zinc-700 text-zinc-200 text-xs px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="all">All roles</option>
+              {uniqueRoles.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* Ghost posts: rejected but still listed as active */}
-      {ghostPostList.length > 0 && (
-        <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 shadow-sm">
-          <h3 className="text-olive-900 font-semibold mb-1 text-base">Rejected but still listed as active (possible ghost posts)</h3>
-          <p className="text-xs text-olive-700 mb-3">
-            You were rejected from these roles but the posting still shows as active. In the current job market many postings stay up after filling. Use &ldquo;Check Posting&rdquo; on the list view to refresh status.
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="text-left text-xs font-medium text-olive-700 border-b border-amber-200">
-                  <th className="py-2 pr-2">Company</th>
-                  <th className="py-2 pr-2">Role</th>
-                  <th className="py-2 pr-2">Applied</th>
-                  <th className="py-2 pr-2">Rejected</th>
-                  <th className="py-2 pr-2">Days listed since rejection</th>
-                  <th className="py-2 pr-2">Last checked</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ghostPostList.slice(0, 15).map((j) => (
-                  <tr key={j.id} className="border-b border-amber-100">
-                    <td className="py-1.5 pr-2 text-olive-900">{j.company}</td>
-                    <td className="py-1.5 pr-2 text-olive-800">{j.position}</td>
-                    <td className="py-1.5 pr-2 text-olive-600">{j.date_applied}</td>
-                    <td className="py-1.5 pr-2 text-olive-600">{j.date_rejected ?? '—'}</td>
-                    <td className="py-1.5 pr-2 font-medium text-amber-800">{j.daysSinceRejection} days</td>
-                    <td className="py-1.5 pr-2 text-olive-600">{j.last_checked ? new Date(j.last_checked).toLocaleDateString() : 'Never'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="p-4 sm:p-6 space-y-6">
+        {/* KPI cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-5">
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Total applications</p>
+            <p className="text-3xl font-bold text-emerald-400 tabular-nums">{totalApplications}</p>
           </div>
-          {ghostPostList.length > 15 && (
-            <p className="text-xs text-olive-600 mt-2">Showing 15 of {ghostPostList.length}. Use list view to &ldquo;Check Posting&rdquo; and update status.</p>
-          )}
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-5">
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Companies applied to</p>
+            <p className="text-3xl font-bold text-emerald-400 tabular-nums">{totalCompanies}</p>
+          </div>
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-5">
+            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Distinct roles</p>
+            <p className="text-3xl font-bold text-emerald-400 tabular-nums">{totalRoles}</p>
+          </div>
         </div>
-      )}
 
-      {/* Status distribution */}
-      <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm space-y-3">
-        <h3 className="text-olive-900 font-semibold mb-2 text-base">Status breakdown</h3>
-        {['applied', 'interviewing', 'rejected', 'offered'].map((status) => {
-          const key = status as Job['status'];
-          const count = statusStats[key];
-          const pct = totalApplications ? Math.round((count / totalApplications) * 100) : 0;
-          return (
-            <div key={status}>
-              <div className="flex justify-between text-xs text-olive-700 mb-1">
-                <span className="capitalize">{status}</span>
-                <span>{count} ({pct}%)</span>
-              </div>
-              <div className="h-2 bg-olive-100 rounded-full overflow-hidden">
-                <div
-                  className="h-2 bg-olive-500 rounded-full"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Rejection insights (when there are rejected applications) */}
-      {rejectionStats.totalRejected > 0 && (
-        <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm space-y-3">
-          <h3 className="text-olive-900 font-semibold mb-2 text-base">Rejection insights</h3>
-          <p className="text-olive-600 text-xs mb-2">
-            {rejectionStats.totalWithDateRejected} of {rejectionStats.totalRejected} rejected applications have a date; {rejectionStats.totalWithRejectionSource} have a source. Add these in the job form when marking as rejected for better AI suggestions.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs font-medium text-olive-700 mb-1">By how you heard</p>
-              <ul className="space-y-1 text-xs text-olive-700">
-                {(['email', 'ai_generated', 'portal', 'other', 'unknown'] as const).map((src) => (
-                  <li key={src}>
-                    {src === 'ai_generated' ? 'AI generated' : src === 'unknown' ? 'Not specified' : src.charAt(0).toUpperCase() + src.slice(1)}: {rejectionStats.bySource[src] ?? 0}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {rejectionStats.dateRejectedCounts.length > 0 && (
+        {/* Trends: this period vs previous period */}
+        {trendsSummary && (
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 shadow-sm p-5">
+            <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider mb-4">Trends (this period vs previous)</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <p className="text-xs font-medium text-olive-700 mb-1">Rejections by date received</p>
-                <ul className="space-y-1 text-xs text-olive-700 max-h-24 overflow-y-auto">
-                  {rejectionStats.dateRejectedCounts.slice(0, 10).map(([date, count]) => (
-                    <li key={date}>
-                      {new Date(date + 'T00:00:00').toLocaleDateString()}: {count}
-                    </li>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider">Applications now</p>
+                <p className="text-xl font-bold text-zinc-100 tabular-nums mt-0.5">{trendsSummary.currentApplications}</p>
+                <p className="text-xs text-zinc-400">vs {trendsSummary.previousApplications} previous</p>
+                {trendsSummary.applicationDelta !== 0 && (
+                  <p className={`text-xs font-semibold mt-0.5 ${trendsSummary.applicationDelta > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {trendsSummary.applicationDelta > 0 ? '+' : ''}{trendsSummary.applicationDelta}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider">Rejections now</p>
+                <p className="text-xl font-bold text-zinc-100 tabular-nums mt-0.5">{trendsSummary.currentRejections}</p>
+                <p className="text-xs text-zinc-400">vs {trendsSummary.previousRejections} previous</p>
+                {trendsSummary.rejectionDelta !== 0 && (
+                  <p className={`text-xs font-semibold mt-0.5 ${trendsSummary.rejectionDelta > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    {trendsSummary.rejectionDelta > 0 ? '+' : ''}{trendsSummary.rejectionDelta}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Ghost posts: rejected but still listed as active */}
+        {ghostPostList.length > 0 && (
+          <div className="bg-amber-50/90 rounded-xl border border-amber-200/80 shadow-sm p-5">
+            <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider mb-1">Rejected but still listed as active (possible ghost posts)</h3>
+            <p className="text-xs text-zinc-400 mb-4">
+              You were rejected from these roles but the posting still shows as active. Use &ldquo;Check Posting&rdquo; on the list view to refresh status.
+            </p>
+            <div className="overflow-x-auto rounded-lg border border-amber-200/60">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="text-left text-xs font-medium text-zinc-400 uppercase tracking-wider bg-amber-100/60 border-b border-amber-200/60">
+                    <th className="py-2.5 px-3">Company</th>
+                    <th className="py-2.5 px-3">Role</th>
+                    <th className="py-2.5 px-3">Applied</th>
+                    <th className="py-2.5 px-3">Rejected</th>
+                    <th className="py-2.5 px-3">Days listed since rejection</th>
+                    <th className="py-2.5 px-3">Last checked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ghostPostList.slice(0, 15).map((j) => (
+                    <tr key={j.id} className="border-b border-amber-100/80 bg-white/50">
+                      <td className="py-2 px-3 text-zinc-100 font-medium">{j.company}</td>
+                      <td className="py-2 px-3 text-zinc-200">{j.position}</td>
+                      <td className="py-2 px-3 text-zinc-400">{j.date_applied}</td>
+                      <td className="py-2 px-3 text-zinc-400">{j.date_rejected ?? '—'}</td>
+                      <td className="py-2 px-3 font-semibold text-amber-700">{j.daysSinceRejection} days</td>
+                      <td className="py-2 px-3 text-zinc-400">{j.last_checked ? new Date(j.last_checked).toLocaleDateString() : 'Never'}</td>
+                    </tr>
                   ))}
-                  {rejectionStats.dateRejectedCounts.length > 10 && (
-                    <li className="text-olive-500">+{rejectionStats.dateRejectedCounts.length - 10} more dates</li>
-                  )}
-                </ul>
+                </tbody>
+              </table>
+            </div>
+            {ghostPostList.length > 15 && (
+              <p className="text-xs text-zinc-400 mt-3">Showing 15 of {ghostPostList.length}.</p>
+            )}
+          </div>
+        )}
+
+        {/* Charts grid: 2 columns on large screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Status distribution */}
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 shadow-sm p-5">
+            <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider mb-4">Status breakdown</h3>
+            <div className="space-y-4">
+              {['applied', 'phone_screening', 'interviewing', 'rejected', 'offered'].map((status) => {
+                const key = status as Job['status'];
+                const count = statusStats[key] ?? 0;
+                const pct = totalApplications ? Math.round((count / totalApplications) * 100) : 0;
+                const label = status === 'phone_screening' ? 'Phone Screening' : status.charAt(0).toUpperCase() + status.slice(1);
+                return (
+                  <div key={status}>
+                    <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
+                      <span className="font-medium">{label}</span>
+                      <span className="tabular-nums">{count} ({pct}%)</span>
+                    </div>
+                    <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-2 rounded-full bg-emerald-500"
+                        style={{ width: `${Math.max(pct, 2)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Applications over time */}
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 shadow-sm p-5">
+            <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider mb-4">Applications over time</h3>
+            {timelineStats.length === 0 ? (
+              <p className="text-zinc-400 text-sm">No applications in this range.</p>
+            ) : (
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                {timelineStats.map(([date, count]) => {
+                  const pct = maxTimelineCount ? Math.max(8, (count / maxTimelineCount) * 100) : 0;
+                  return (
+                    <div key={date}>
+                      <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                        <span>{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
+                        <span className="tabular-nums">{count}</span>
+                      </div>
+                      <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-2 rounded-full bg-emerald-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
-      )}
 
-      {/* Applications over time */}
-      <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
-        <h3 className="text-olive-900 font-semibold mb-2 text-base">Applications over time</h3>
-        {timelineStats.length === 0 ? (
-          <p className="text-olive-600 text-sm">No applications in this range.</p>
-        ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {timelineStats.map(([date, count]) => {
-              const pct = maxTimelineCount ? Math.max(8, (count / maxTimelineCount) * 100) : 0;
-              return (
-                <div key={date}>
-                  <div className="flex justify-between text-xs text-olive-700 mb-1">
-                    <span>{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
-                    <span>{count}</span>
-                  </div>
-                  <div className="h-2 bg-olive-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-2 bg-olive-500 rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+        {/* Rejection insights + Rejections over time: 2-col grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {rejectionStats.totalRejected > 0 && (
+            <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 shadow-sm p-5 space-y-4">
+              <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider">Rejection insights</h3>
+              <p className="text-zinc-400 text-xs">
+                {rejectionStats.totalWithDateRejected} of {rejectionStats.totalRejected} rejected have a date; {rejectionStats.totalWithRejectionSource} have a source.
+              </p>
+              <div>
+                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">By how you heard</p>
+                <ul className="space-y-1.5 text-xs text-zinc-300">
+                  {(['email', 'ai_generated', 'portal', 'other', 'unknown'] as const).map((src) => (
+                    <li key={src} className="flex justify-between">
+                      <span>{src === 'ai_generated' ? 'AI generated' : src === 'unknown' ? 'Not specified' : src.charAt(0).toUpperCase() + src.slice(1)}</span>
+                      <span className="tabular-nums font-medium">{rejectionStats.bySource[src] ?? 0}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {rejectionStats.dateRejectedCounts.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Rejections by date</p>
+                  <ul className="space-y-1 text-xs text-zinc-400 max-h-24 overflow-y-auto">
+                    {rejectionStats.dateRejectedCounts.slice(0, 10).map(([date, count]) => (
+                      <li key={date}>{new Date(date + 'T00:00:00').toLocaleDateString()}: {count}</li>
+                    ))}
+                    {rejectionStats.dateRejectedCounts.length > 10 && (
+                      <li className="text-zinc-400">+{rejectionStats.dateRejectedCounts.length - 10} more</li>
+                    )}
+                  </ul>
                 </div>
-              );
-            })}
+              )}
+            </div>
+          )}
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 shadow-sm p-5">
+            <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider mb-1">Rejections over time</h3>
+            <p className="text-xs text-zinc-400 mb-4">By date rejected (or application date if not set).</p>
+            {rejectionTimelineStats.length === 0 ? (
+              <p className="text-zinc-400 text-sm">No rejections in this range.</p>
+            ) : (
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                {rejectionTimelineStats.map(([date, count]) => {
+                  const pct = maxRejectionTimelineCount ? Math.max(8, (count / maxRejectionTimelineCount) * 100) : 0;
+                  return (
+                    <div key={date}>
+                      <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                        <span>{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
+                        <span className="tabular-nums">{count}</span>
+                      </div>
+                      <div className="h-2 bg-red-100 rounded-full overflow-hidden">
+                        <div className="h-2 rounded-full bg-red-400" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Rejections over time */}
-      <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
-        <h3 className="text-olive-900 font-semibold mb-2 text-base">Rejections over time</h3>
-        <p className="text-xs text-olive-600 mb-2">By date you were rejected (or application date if rejection date not set).</p>
-        {rejectionTimelineStats.length === 0 ? (
-          <p className="text-olive-600 text-sm">No rejections in this range, or add &ldquo;Date rejected&rdquo; when marking roles as rejected.</p>
-        ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {rejectionTimelineStats.map(([date, count]) => {
-              const pct = maxRejectionTimelineCount ? Math.max(8, (count / maxRejectionTimelineCount) * 100) : 0;
-              return (
-                <div key={date}>
-                  <div className="flex justify-between text-xs text-olive-700 mb-1">
-                    <span>{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
-                    <span>{count}</span>
-                  </div>
-                  <div className="h-2 bg-red-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-2 bg-red-400 rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Top companies */}
-      <div className="bg-white border border-olive-200 rounded-xl p-4 shadow-sm">
-        <h3 className="text-olive-900 font-semibold mb-2 text-base">Top companies by applications</h3>
-        {companyStats.length === 0 ? (
-          <p className="text-olive-600 text-sm">No company data for this filter.</p>
-        ) : (
-          <div className="space-y-2">
-            {companyStats.map(([company, count]) => {
-              const pct = maxCompanyCount ? Math.max(10, (count / maxCompanyCount) * 100) : 0;
-              return (
-                <div key={company}>
-                  <div className="flex justify-between text-xs text-olive-700 mb-1">
-                    <span className="truncate max-w-[60%]">{company}</span>
-                    <span>{count}</span>
-                  </div>
-                  <div className="h-2 bg-olive-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-2 bg-olive-500 rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* AI insights */}
-      <div className="bg-white border border-dashed border-olive-300 rounded-xl p-4 shadow-sm space-y-3">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div>
-            <h3 className="text-olive-900 font-semibold mb-1 text-base">AI insights</h3>
-            <p className="text-olive-600 text-xs">
-              Uses the current filters and charts above to summarize what your data is telling you.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleGenerateInsights}
-            disabled={aiLoading || totalApplications === 0}
-            className="px-3 py-1.5 rounded-lg bg-olive-600 hover:bg-olive-500 disabled:bg-olive-200 disabled:text-olive-500 text-xs font-semibold text-white transition-colors"
-          >
-            {aiLoading ? 'Analyzing…' : 'Generate insights'}
-          </button>
         </div>
-        {aiError && (
-          <p className="text-xs text-red-600">{aiError}</p>
-        )}
-        {aiInsights ? (
-          <div className="mt-1 text-olive-700 text-sm whitespace-pre-wrap leading-relaxed">
-            {aiInsights}
+
+        {/* Top companies */}
+        <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 shadow-sm p-5">
+          <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider mb-4">Top companies by applications</h3>
+          {companyStats.length === 0 ? (
+            <p className="text-zinc-400 text-sm">No company data for this filter.</p>
+          ) : (
+            <div className="space-y-3">
+              {companyStats.map(([company, count]) => {
+                const pct = maxCompanyCount ? Math.max(10, (count / maxCompanyCount) * 100) : 0;
+                return (
+                  <div key={company}>
+                    <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                      <span className="truncate max-w-[70%] font-medium text-zinc-200">{company}</span>
+                      <span className="tabular-nums">{count}</span>
+                    </div>
+                    <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+                      <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* AI insights */}
+        <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="text-zinc-100 font-semibold text-sm uppercase tracking-wider mb-1">AI insights</h3>
+              <p className="text-zinc-400 text-xs">
+                Summarizes your data using the current filters.
+                {aiModel && (
+                  <span className="block mt-1 text-zinc-400">
+                    Model: {aiModel.replace(/^[^/]+\//, '')}
+                  </span>
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerateInsights}
+              disabled={aiLoading || jobs.length === 0}
+              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-600 disabled:text-zinc-400 text-xs font-semibold text-white transition-colors"
+            >
+              {aiLoading ? 'Analyzing…' : 'Generate insights'}
+            </button>
           </div>
-        ) : !aiLoading && !aiError ? (
-          <p className="text-olive-500 text-xs">
-            Run the analysis to get a summary of patterns (e.g., which companies or roles respond most,
-            how your interview rate is trending, and where to focus next).
-          </p>
-        ) : null}
+          {aiError && (
+            <p className="text-xs text-red-600">{aiError}</p>
+          )}
+          {aiInsights ? (
+            <>
+              {/* Insights at a glance: charts in one row (dashboard-style) */}
+              <div className="rounded-xl border border-zinc-700 bg-zinc-800/50/80 p-4">
+                <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-4">Insights at a glance</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="bg-white rounded-xl p-4 border border-zinc-700/60 shadow-sm min-h-[200px] flex flex-col">
+                    <p className="text-xs font-medium text-zinc-400 mb-2">Status breakdown</p>
+                    {statusPieData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <PieChart>
+                          <Pie
+                            data={statusPieData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={60}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {statusPieData.map((_, i) => (
+                              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => [value, 'Applications']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="text-xs text-zinc-400">No status data</p>
+                    )}
+                  </div>
+                  <div className="bg-white rounded-xl p-4 border border-zinc-700/60 shadow-sm min-h-[200px] flex flex-col">
+                    <p className="text-xs font-medium text-zinc-400 mb-2">Applications over time</p>
+                    {timelineChartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <AreaChart data={timelineChartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+                          <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={24} />
+                          <Tooltip
+                            formatter={(value: number) => [value, 'Applications']}
+                            labelFormatter={(_, payload) => payload?.[0]?.payload?.fullDate && new Date(payload[0].payload.fullDate + 'T12:00:00').toLocaleDateString()}
+                          />
+                          <Area type="monotone" dataKey="applications" stroke="#10b981" fill="#10b981" fillOpacity={0.25} strokeWidth={1.5} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="text-xs text-zinc-400">No timeline data</p>
+                    )}
+                  </div>
+                  <div className="bg-white rounded-xl p-4 border border-zinc-700/60 shadow-sm min-h-[200px] flex flex-col">
+                    <p className="text-xs font-medium text-zinc-400 mb-2">Rejections by source</p>
+                    {rejectionSourceChartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <BarChart data={rejectionSourceChartData} layout="vertical" margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                          <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10 }} />
+                          <Tooltip formatter={(value: number) => [value, 'Rejections']} />
+                          <Bar dataKey="count" fill="#34d399" radius={[0, 4, 4, 0]} name="Rejections" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="text-xs text-zinc-400">No rejection source data</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Insight cards + Related reading: 2-col grid so cards line up side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(() => {
+                  const normalized = aiInsights.replace(/\n{3,}/g, '\n\n').trim();
+                  const sections = normalized
+                    .split(/(?=^### )|(?=\n\n[A-Z][^\n]{2,120}:)/m)
+                    .map((block) => block.trim())
+                    .filter(Boolean);
+                  const mdComponents = {
+                    h4: ({ children }: { children?: React.ReactNode }) => <h4 className="text-sm font-semibold text-zinc-100 mt-3 mb-1.5 first:mt-0">{children}</h4>,
+                    p: ({ children }: { children?: React.ReactNode }) => <p className="text-sm text-zinc-300 leading-relaxed mb-3 last:mb-0">{children}</p>,
+                    ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc list-inside text-sm text-zinc-300 space-y-1.5 mb-3 ml-1">{children}</ul>,
+                    ol: ({ children }: { children?: React.ReactNode }) => <ol className="list-decimal list-inside text-sm text-zinc-300 space-y-1.5 mb-3 ml-1">{children}</ol>,
+                    li: ({ children }: { children?: React.ReactNode }) => <li className="leading-relaxed mb-1">{children}</li>,
+                    strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-semibold text-zinc-100">{children}</strong>,
+                  };
+                  return sections.map((block, i) => {
+                    const firstLineEnd = block.indexOf('\n');
+                    const firstLine = firstLineEnd > 0 ? block.slice(0, firstLineEnd) : block;
+                    const isMarkdownHeader = /^###\s+/.test(firstLine);
+                    const isColonHeader = /^[A-Z][^\n]{2,100}:$/.test(firstLine.trim());
+                    const title = isMarkdownHeader
+                      ? firstLine.replace(/^###\s*/, '').trim()
+                      : isColonHeader
+                        ? firstLine.trim().replace(/:$/, '')
+                        : '';
+                    const body = (isMarkdownHeader || isColonHeader) && firstLineEnd > 0
+                      ? block.slice(firstLineEnd).trim()
+                      : block;
+                    const bodyWithSubheadings = body.replace(
+                      /^([A-Z][^\n]{3,80}:)\s*$/gm,
+                      (_, line) => `#### ${line.replace(/:$/, '')}`,
+                    );
+                    return (
+                      <div key={i} className="bg-zinc-800 rounded-xl border border-zinc-700/80 p-4 shadow-sm min-h-[140px]">
+                        {title && <h3 className="text-sm font-semibold text-zinc-100 mb-3 pb-2 border-b border-zinc-700">{title}</h3>}
+                        <div className="insights-prose">
+                          <ReactMarkdown components={mdComponents}>{bodyWithSubheadings}</ReactMarkdown>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+                {aiSuggestedReading && aiSuggestedReading.length > 0 && (
+                  <div className="bg-zinc-800 rounded-xl border border-zinc-700/80 p-4 shadow-sm min-h-[140px]">
+                    <h3 className="text-sm font-semibold text-zinc-100 mb-2 pb-2 border-b border-zinc-700">Related reading</h3>
+                    <p className="text-xs text-zinc-400 mb-3">News and policy context relevant to your insights.</p>
+                    <ul className="space-y-2">
+                      {aiSuggestedReading.map((item, i) => (
+                        <li key={i}>
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-zinc-200 hover:text-zinc-400 underline"
+                          >
+                            {item.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : !aiLoading && !aiError ? (
+            <p className="text-zinc-400 text-xs">
+              Run the analysis to get a summary of patterns and recommendations.
+            </p>
+          ) : null}
+        </div>
       </div>
     </div>
   );

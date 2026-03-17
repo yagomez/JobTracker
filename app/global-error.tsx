@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * Catches errors in the root layout and shows a message instead of a white screen.
+ */
 export default function GlobalError({
   error,
   reset,
@@ -8,19 +11,18 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
-      <body>
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-          <div className="bg-white p-8 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong!</h2>
-            <p className="text-gray-600 mb-4">{error.message}</p>
-            <button
-              onClick={() => reset()}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Try again
-            </button>
-          </div>
+    <html lang="en">
+      <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif', padding: 24, background: '#f5f5dc', color: '#333' }}>
+        <div style={{ maxWidth: 600 }}>
+          <h1 style={{ color: '#c53030' }}>Something went wrong</h1>
+          <p style={{ marginBottom: 16 }}>{error.message}</p>
+          <button
+            type="button"
+            onClick={reset}
+            style={{ padding: '8px 16px', background: '#4a5568', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+          >
+            Try again
+          </button>
         </div>
       </body>
     </html>
