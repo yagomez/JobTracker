@@ -234,7 +234,10 @@ export function Dashboard({ isDemo: isDemoProp = false }: { isDemo?: boolean }) 
         })
       : [];
 
-  const viewTitles: Record<ViewMode, string> = {
+  const viewTitles: Record<
+    'list' | 'calendar' | 'analytics' | 'search' | 'no-apply' | 'interview-prep',
+    string
+  > = {
     list: 'Jobs',
     calendar: 'Calendar',
     search: 'Search',

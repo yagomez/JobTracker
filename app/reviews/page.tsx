@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import type {
@@ -19,6 +18,9 @@ import type {
 import { filterUsCompanies } from '@/lib/us-companies';
 import { getDemoDataForCompany, getDemoCompanies } from '@/lib/demo-reviews-data';
 import mainframeArt from '@/app/images/mainframe_art.png';
+
+// Prevent SSG/prerender issues with `useSearchParams` in this page and others.
+export const dynamic = 'force-dynamic';
 
 type CompanySummary = { name: string; reviewCount: number; avgGhostRating: number };
 
@@ -76,7 +78,8 @@ function GhostRatingChartTooltip({
   chartWrapperRef,
 }: {
   active?: boolean;
-  payload?: { name: string; value: number }[];
+  // Recharts may pass a readonly payload array; accept it to avoid TS build failures.
+  payload?: readonly { name: string; value: number }[];
   coordinate?: { x: number; y: number };
   chartWrapperRef?: React.RefObject<HTMLDivElement | null>;
 }) {
@@ -259,8 +262,10 @@ export default function CompanyReviewsPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ghostChartWrapperRef = useRef<HTMLDivElement>(null);
 
-  const searchParams = useSearchParams();
-  const isDemo = searchParams.get('demo') === '1';
+  const isDemo = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('demo') === '1';
+  }, []);
 
   /** Years that have at least one review (for this company, from current reviews in state) */
   const reviewYears = useMemo(() => {
@@ -1516,7 +1521,7 @@ export default function CompanyReviewsPage() {
                                 <Tooltip
                                   contentStyle={{ backgroundColor: 'rgb(24 24 27)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }}
                                   labelStyle={{ color: '#e4e4e7' }}
-                                  formatter={(value: number) => [value, 'Responses']}
+                                  formatter={(value: number | undefined) => [value ?? 0, 'Responses']}
                                 />
                                 <Bar dataKey="count" fill="rgba(255,255,255,0.25)" radius={[4, 4, 0, 0]} name="Responses" />
                               </BarChart>
@@ -1612,7 +1617,7 @@ export default function CompanyReviewsPage() {
                                     innerRadius={40}
                                     outerRadius={80}
                                     paddingAngle={2}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                                   >
                                     {channelPieData.map((_, i) => (
                                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -1621,7 +1626,7 @@ export default function CompanyReviewsPage() {
                                   <Tooltip
                                     contentStyle={{ backgroundColor: 'rgb(24 24 27)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }}
                                     labelStyle={{ color: '#e4e4e7' }}
-                                    formatter={(value: number) => [value, 'Responses']}
+                                    formatter={(value: number | undefined) => [value ?? 0, 'Responses']}
                                   />
                                 </PieChart>
                               </ResponsiveContainer>
@@ -1865,7 +1870,7 @@ export default function CompanyReviewsPage() {
                                 <Tooltip
                                   contentStyle={{ backgroundColor: 'rgb(24 24 27)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }}
                                   labelStyle={{ color: '#e4e4e7' }}
-                                  formatter={(value: number) => [value, 'Avg rating']}
+                                  formatter={(value: number | undefined) => [value ?? 0, 'Avg rating']}
                                 />
                                 <Bar dataKey="value" fill="rgba(59, 130, 246, 0.8)" radius={[4, 4, 0, 0]} name="Avg rating" />
                               </BarChart>
@@ -2182,7 +2187,11 @@ export default function CompanyReviewsPage() {
                                 <Tooltip
                                   contentStyle={{ backgroundColor: 'rgb(24 24 27)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }}
                                   labelStyle={{ color: '#e4e4e7' }}
-                                  formatter={(value: number, name, props) => [props.payload?.name?.includes('promotion') ? `${value} yrs` : value, '']}
+                                  formatter={(value, _name, props) => {
+                                    const v = value ?? 0;
+                                    const isPromotion = props.payload?.name?.includes('promotion');
+                                    return [isPromotion ? `${v} yrs` : v, ''];
+                                  }}
                                 />
                                 <Bar dataKey="value" fill="rgba(139, 92, 246, 0.8)" radius={[4, 4, 0, 0]} name="Value" />
                               </BarChart>

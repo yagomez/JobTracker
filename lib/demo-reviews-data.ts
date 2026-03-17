@@ -109,7 +109,9 @@ function norm(company: string): string {
   return company.toLowerCase().trim();
 }
 
-const DEMO_BY_COMPANY: Record<string, ReturnType<typeof getDemoDataForCompany>> = {};
+// Avoid circular type reference errors: getDemoDataForCompany populates this map,
+// so using ReturnType<typeof getDemoDataForCompany> in the map type creates a self reference.
+const DEMO_BY_COMPANY: Record<string, any> = {};
 
 export function getDemoDataForCompany(company: string) {
   const key = norm(company);

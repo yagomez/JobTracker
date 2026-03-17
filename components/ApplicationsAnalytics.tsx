@@ -644,13 +644,13 @@ export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
                             cx="50%"
                             cy="50%"
                             outerRadius={60}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                           >
                             {statusPieData.map((_, i) => (
                               <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value: number) => [value, 'Applications']} />
+                          <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Applications']} />
                         </PieChart>
                       </ResponsiveContainer>
                     ) : (
@@ -665,7 +665,7 @@ export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
                           <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                           <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={24} />
                           <Tooltip
-                            formatter={(value: number) => [value, 'Applications']}
+                            formatter={(value: number | undefined) => [value ?? 0, 'Applications']}
                             labelFormatter={(_, payload) => payload?.[0]?.payload?.fullDate && new Date(payload[0].payload.fullDate + 'T12:00:00').toLocaleDateString()}
                           />
                           <Area type="monotone" dataKey="applications" stroke="#10b981" fill="#10b981" fillOpacity={0.25} strokeWidth={1.5} />
@@ -682,7 +682,7 @@ export function ApplicationsAnalytics({ jobs }: ApplicationsAnalyticsProps) {
                         <BarChart data={rejectionSourceChartData} layout="vertical" margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
                           <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
                           <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10 }} />
-                          <Tooltip formatter={(value: number) => [value, 'Rejections']} />
+                      <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Rejections']} />
                           <Bar dataKey="count" fill="#34d399" radius={[0, 4, 4, 0]} name="Rejections" />
                         </BarChart>
                       </ResponsiveContainer>

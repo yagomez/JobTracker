@@ -1,7 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Dashboard } from '@/components/Dashboard';
+
+// Prevent SSG/prerender issues with `useSearchParams` inside Dashboard.
+export const dynamic = 'force-dynamic';
 
 export default function DemoPage() {
   return (
@@ -30,7 +34,13 @@ export default function DemoPage() {
         </Link>
       </div>
       <div className="flex-1 min-h-0">
-        <Dashboard isDemo={true} />
+        <Suspense
+          fallback={
+            <div className="h-full min-h-[200px] rounded-xl border border-zinc-700 bg-zinc-900" />
+          }
+        >
+          <Dashboard isDemo={true} />
+        </Suspense>
       </div>
     </div>
   );
